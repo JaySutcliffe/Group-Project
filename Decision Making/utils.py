@@ -31,30 +31,29 @@ def args_train(args):
     save_path = None
     n_episodes = args.episodes
     init_weights = args.init_weights
-    lr = args.lr
+    alpha = args.alpha
     hidden_units = args.hidden_units
     lamda = args.lamda
     name = args.name
     seed = args.seed
 
-    net = EvaluationModel(hidden_units=hidden_units, lr=lr, lamda=lamda, init_weights=init_weights, seed=seed)
-    eligibility = True
+    net = EvaluationModel(hidden_units=hidden_units, alpha=alpha, lamda=lamda, init_weights=init_weights, seed=seed)
 
     if args.model and path_exists(args.model):
         # assert os.path.exists(args.model), print("The path {} doesn't exists".format(args.model))
-        net.load(checkpoint_path=args.model, eligibility_traces=eligibility)
+        net.load(checkpoint_path=args.model)
 
     if args.save_path and path_exists(args.save_path):
         # assert os.path.exists(args.save_path), print("The path {} doesn't exists".format(args.save_path))
         save_path = args.save_path
 
         write_file(
-            save_path, save_path=args.save_path, command_line_args=args, hidden_units=hidden_units, init_weights=init_weights, alpha=net.lr, lamda=net.lamda,
+            save_path, save_path=args.save_path, command_line_args=args, hidden_units=hidden_units, init_weights=init_weights, alpha=net.alpha, lamda=net.lamda,
             n_episodes=n_episodes, save_step=save_step, start_episode=net.start_episode, name_experiment=name, restored_model=args.model, seed=seed,
-            eligibility=eligibility, modules=[module for module in net.modules()]
+            modules=[module for module in net.modules()]
         )
 
-    net.train_agent(n_episodes=n_episodes, save_path=save_path, save_step=save_step, eligibility=eligibility, name_experiment=name)
+    net.train_agent(n_episodes=n_episodes, save_path=save_path, save_step=save_step, name_experiment=name)
 
 
 # =================================== EVALUATE PARAMETERS ====================================
@@ -69,11 +68,11 @@ def args_evaluate(args):
         # assert os.path.exists(model_agent0), print("The path {} doesn't exists".format(model_agent0))
         # assert os.path.exists(model_agent1), print("The path {} doesn't exists".format(model_agent1))
 
-        net0 = EvaluationModel(hidden_units=hidden_units_agent0, lr=0.1, lamda=None, init_weights=False)
-        net1 = EvaluationModel(hidden_units=hidden_units_agent1, lr=0.1, lamda=None, init_weights=False)
+        net0 = EvaluationModel(hidden_units=hidden_units_agent0, alpha=0.1, lamda=None, init_weights=False)
+        net1 = EvaluationModel(hidden_units=hidden_units_agent1, alpha=0.1, lamda=None, init_weights=False)
 
-        net0.load(checkpoint_path=model_agent0, optimizer=None, eligibility_traces=False)
-        net1.load(checkpoint_path=model_agent1, optimizer=None, eligibility_traces=False)
+        net0.load(checkpoint_path=model_agent0)
+        net1.load(checkpoint_path=model_agent1)
 
         agents = [TDAgent(0, net1), TDAgent(1, net1)]
         wins = [0, 0]
@@ -124,9 +123,9 @@ def args_plot(args, parser):
                 if ".tar" in file:
                     print("\nLoad {}".format(os.path.join(root, file)))
 
-                    net = EvaluationModel(hidden_units=hidden_units, lr=0.1, lamda=None, init_weights=False)
+                    net = EvaluationModel(hidden_units=hidden_units, alpha=0.1, lamda=None, init_weights=False)
 
-                    net.load(checkpoint_path=os.path.join(root, file), optimizer=None, eligibility_traces=False)
+                    net.load(checkpoint_path=os.path.join(root, file))
 
                     if 'random' in opponents:
                         tag_scalar_dict = {}

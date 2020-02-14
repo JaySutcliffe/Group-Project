@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser_train.add_argument('--save_step', help='Save the model every n episodes/games', type=int, default=0)
     parser_train.add_argument('--episodes', help='Number of episodes/games', type=int, default=200000)
     parser_train.add_argument('--init_weights', help='Init Weights with zeros', action='store_true')
-    parser_train.add_argument('--lr', help='Learning rate', type=float, default=1e-4)
+    parser_train.add_argument('--alpha', help='Learning rate', type=float, default=1e-4)
     parser_train.add_argument('--hidden_units', help='Hidden units', type=int, default=40)
     parser_train.add_argument('--lamda', help='Credit assignment parameter', type=float, default=0.7)
     parser_train.add_argument('--model', help='Directory location to the model to be restored', type=str, default=None)

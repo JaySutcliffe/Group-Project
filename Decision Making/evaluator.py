@@ -15,34 +15,18 @@ torch.set_default_tensor_type('torch.DoubleTensor')
 
 class EvaluationModel(nn.Module):
 
-    def __init__(self, hidden_units, lr, lamda, init_weights, seed=123, input_units=198, output_units=1):
+    def __init__(self, hidden_units, alpha, lamda, init_weights, seed=0, input_units=198, output_units=1):
         super(EvaluationModel, self).__init__()
-        self.lr = lr
-        self.lamda = lamda  # trace-decay parameter
-        self.start_episode = 0
+        self.alpha = alpha
+        self.lamda = lamda
 
-        self.eligibility_traces = None
-        self.optimizer = None
+        self.start_episode = 0
 
         torch.manual_seed(seed)
         random.seed(seed)
 
-        self.hidden = nn.Sequential(
-            nn.Linear(input_units, hidden_units),
-            nn.Sigmoid()
-        )
-
-        self.output = nn.Sequential(
-            nn.Linear(hidden_units, output_units),
-            nn.Sigmoid()
-        )
-
-        if init_weights:
-            self.init_weights()
-
-    def init_weights(self):
-        for p in self.parameters():
-            nn.init.zeros_(p)
+        self.hidden = nn.Sequential(nn.Linear(input_units, hidden_units), nn.Sigmoid())
+        self.output = nn.Sequential(nn.Linear(hidden_units, output_units), nn.Sigmoid())
 
     def forward(self, x):
         x = torch.from_numpy(np.array(x))
@@ -50,58 +34,37 @@ class EvaluationModel(nn.Module):
         x = self.output(x)
         return x
 
-    def update_weights(self, p, p_next):
-        # reset the gradients
+    def update_weights(self, p, p_next, eligibility_traces):
         self.zero_grad()
-
-        # compute the derivative of p w.r.t. the parameters
         p.backward()
 
         with torch.no_grad():
 
-            td_error = p_next - p
-
-            # get the parameters of the model
+            delta = p_next - p
             parameters = list(self.parameters())
 
             for i, weights in enumerate(parameters):
-
-                # z <- gamma * lambda * z + (grad w w.r.t P_t)
-                self.eligibility_traces[i] = self.lamda * self.eligibility_traces[i] + weights.grad
-
-                # w <- w + alpha * td_error * z
-                new_weights = weights + self.lr * td_error * self.eligibility_traces[i]
+                eligibility_traces[i] = self.lamda * eligibility_traces[i] + weights.grad
+                new_weights = weights + self.alpha * delta * eligibility_traces[i]
                 weights.copy_(new_weights)
 
-        return td_error
-
-    def init_eligibility_traces(self):
-        self.eligibility_traces = [torch.zeros(weights.shape, requires_grad=False) for weights in list(self.parameters())]
+        return delta
 
     def checkpoint(self, checkpoint_path, step, name_experiment):
         path = checkpoint_path + "/{}_{}_{}.tar".format(name_experiment, datetime.datetime.now().strftime('%Y%m%d_%H%M_%S_%f'), step + 1)
-        torch.save({'step': step + 1, 'model_state_dict': self.state_dict(), 'eligibility': self.eligibility_traces if self.eligibility_traces else []}, path)
+        torch.save({'step': step + 1, 'model_state_dict': self.state_dict()}, path)
         print("\nCheckpoint saved: {}".format(path))
 
-    def load(self, checkpoint_path, optimizer=None, eligibility_traces=None):
+    def load(self, checkpoint_path):
         checkpoint = torch.load(checkpoint_path)
         self.start_episode = checkpoint['step']
-
         self.load_state_dict(checkpoint['model_state_dict'])
 
-        if eligibility_traces is not None:
-            self.eligibility_traces = checkpoint['eligibility']
-
-        if optimizer is not None:
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
-
-    def train_agent(self, n_episodes, save_path=None, eligibility=False, save_step=0, name_experiment=''):
+    def train_agent(self, n_episodes, save_path=None, save_step=0, name_experiment=''):
         start_episode = self.start_episode
         n_episodes += start_episode
 
         wins = [0, 0]
-        network = self
-
         agents = [TDAgent(0, self), TDAgent(1, self)]
 
         durations = []
@@ -110,9 +73,8 @@ class EvaluationModel(nn.Module):
 
         for episode in range(start_episode, n_episodes):
 
-            if eligibility:
-                self.init_eligibility_traces()
-
+            eligibility_traces = [torch.zeros(weights.shape, requires_grad=False) for weights
+                                  in list(self.parameters())]
             game = Game(agents)
             current_player = random.randint(0, 1)
             observation = game.extract_features(current_player)
@@ -120,25 +82,32 @@ class EvaluationModel(nn.Module):
             game_step = 0
 
             while not game.winner():
+
                 game.next_turn(current_player, game.roll_dice())
                 current_player = not current_player
                 observation_next = game.extract_features(current_player)
                 p = self(observation)
                 p_next = self(observation_next)
+
                 observation = observation_next
                 game_step += 1
-                loss = self.update_weights(p, p_next)
+
+                self.update_weights(p, p_next, eligibility_traces)
 
             winner = game.winner()[0]
-            loss = self.update_weights(self(observation), winner)
+
+            self.update_weights(self(observation), winner, eligibility_traces)
+
             wins[winner] += 1
             tot = sum(wins)
+
             print(
                 "Game={:<6d} | Winner={} | after {:<4} plays || Wins: 0={:<6}({:<5.1f}%) | 1={:<6}({:<5.1f}%) | Duration={:<.3f} sec".format(
                     episode + 1, winner, game_step,
                     wins[0], (wins[0] / tot) * 100,
                     wins[1], (wins[1] / tot) * 100,
                     time.time() - t))
+
             durations.append(time.time() - t)
             steps += game_step
 
