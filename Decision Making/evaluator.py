@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from agents import TDAgent, RandomAgent
+from agents import TDAgent
 from game import Game
 
 torch.set_default_tensor_type('torch.DoubleTensor')
@@ -15,7 +15,7 @@ torch.set_default_tensor_type('torch.DoubleTensor')
 
 class EvaluationModel(nn.Module):
 
-    def __init__(self, hidden_units, alpha, lamda, init_weights, seed=0, input_units=198, output_units=1):
+    def __init__(self, hidden_units, alpha, lamda, seed=0, input_units=198, output_units=1):
         super(EvaluationModel, self).__init__()
         self.alpha = alpha
         self.lamda = lamda
@@ -68,7 +68,7 @@ class EvaluationModel(nn.Module):
         agents = [TDAgent(0, self), TDAgent(1, self)]
 
         durations = []
-        steps = 0
+        global_steps = 0
         start_training = time.time()
 
         for episode in range(start_episode, n_episodes):
@@ -77,7 +77,7 @@ class EvaluationModel(nn.Module):
                                   in list(self.parameters())]
             game = Game(agents)
             current_player = random.randint(0, 1)
-            observation = game.extract_features(current_player)
+            observation = game.get_features(current_player)
             t = time.time()
             game_step = 0
 
@@ -85,7 +85,7 @@ class EvaluationModel(nn.Module):
 
                 game.next_turn(current_player, game.roll_dice())
                 current_player = not current_player
-                observation_next = game.extract_features(current_player)
+                observation_next = game.get_features(current_player)
                 p = self(observation)
                 p_next = self(observation_next)
 
@@ -109,17 +109,17 @@ class EvaluationModel(nn.Module):
                     time.time() - t))
 
             durations.append(time.time() - t)
-            steps += game_step
+            global_steps += game_step
 
             if save_path and save_step > 0 and episode > 0 and (episode + 1) % save_step == 0:
                 self.checkpoint(checkpoint_path=save_path, step=episode, name_experiment=name_experiment)
 
         print("\nAverage duration per game: {} seconds".format(round(sum(durations) / n_episodes, 3)))
-        print("Average game length: {} plays | Total Duration: {}".format(round(steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
+        print("Average game length: {} plays | Total Duration: {}".format(round(global_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
 
         if save_path:
             self.checkpoint(checkpoint_path=save_path, step=n_episodes - 1, name_experiment=name_experiment)
 
             with open('{}/comments.txt'.format(save_path), 'a') as file:
                 file.write("Average duration per game: {} seconds".format(round(sum(durations) / n_episodes, 3)))
-                file.write("\nAverage game length: {} plays | Total Duration: {}".format(round(steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
+                file.write("\nAverage game length: {} plays | Total Duration: {}".format(round(global_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))

@@ -10,4 +10,8 @@ class Action:
         self.bars = bars
 
     def print_action(self):
-        print("Player: " + str(self.player) + ", Start: " + str(self.start) + ", End: " + str(self.end) + ", Roll: " + str(self.roll) + ", Bars: " + str(self.bars))
+        print("Player: " + str(self.player)
+              + ", Start: " + str(self.start)
+              + ", End: " + str(self.end)
+              + ", Roll: " + str(self.roll)
+              + ", Bars: " + str(self.bars))
