@@ -68,10 +68,16 @@ class EvaluationModel(nn.Module):
         agents = [TDAgent(0, self), TDAgent(1, self)]
 
         durations = []
-        global_steps = 0
+        total_game_steps = 0
         start_training = time.time()
 
         for episode in range(start_episode, n_episodes):
+            if episode % 30000 == 0:
+                self.lamda = max(0.7, 0.9*pow(0.96, episode/30000))
+
+            if episode % 40000 == 0:
+                self.alpha = max(0.01, 0.1*pow(0.96, episode/40000))
+
 
             eligibility_traces = [torch.zeros(weights.shape, requires_grad=False) for weights
                                   in list(self.parameters())]
@@ -107,17 +113,17 @@ class EvaluationModel(nn.Module):
                     time.time() - t))
 
             durations.append(time.time() - t)
-            global_steps += game_step
+            total_game_steps += game_step
 
             if save_path and save_step > 0 and episode > 0 and (episode + 1) % save_step == 0:
                 self.checkpoint(checkpoint_path=save_path, step=episode, name_experiment=name_experiment)
 
         print("\nAverage duration per game: {} seconds".format(round(sum(durations) / n_episodes, 3)))
-        print("Average game length: {} plays | Total Duration: {}".format(round(global_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
+        print("Average game length: {} plays | Total Duration: {}".format(round(total_game_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
 
         if save_path:
             self.checkpoint(checkpoint_path=save_path, step=n_episodes - 1, name_experiment=name_experiment)
 
             with open('{}/comments.txt'.format(save_path), 'a') as file:
                 file.write("Average duration per game: {} seconds".format(round(sum(durations) / n_episodes, 3)))
-                file.write("\nAverage game length: {} plays | Total Duration: {}".format(round(global_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
+                file.write("\nAverage game length: {} plays | Total Duration: {}".format(round(total_game_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
