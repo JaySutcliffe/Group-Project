@@ -42,8 +42,7 @@ def args_train(args):
         save_path = args.save_path
 
         write_file(
-            save_path, save_path=args.save_path, command_line_args=args, hidden_units=hidden_units,
-            init_weights=init_weights, alpha=net.alpha, lamda=net.lamda,
+            save_path, save_path=args.save_path, command_line_args=args, hidden_units=hidden_units, alpha=net.alpha, lamda=net.lamda,
             n_episodes=n_episodes, save_step=save_step, start_episode=net.start_episode, name_experiment=name,
             restored_model=args.model, seed=seed,
             modules=[module for module in net.modules()]
@@ -108,9 +107,10 @@ def args_plot(args):
                             game = Game(agents)
                             wins[game.play()[0]] += 1
                         tag_scalar_dict['random'] = wins[0]
-
+                        print(wins)
                         writer.add_scalars('wins_vs_random/', tag_scalar_dict, global_step)
 
                     global_step += 1
 
                     writer.close()
+

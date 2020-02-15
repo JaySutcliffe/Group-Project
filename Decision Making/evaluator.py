@@ -79,19 +79,17 @@ class EvaluationModel(nn.Module):
             current_player = random.randint(0, 1)
             observation = game.get_features(current_player)
             t = time.time()
-            game_step = 0
 
-            while not game.winner():
+            for game_step in count():
 
                 game.next_turn(current_player, game.roll_dice())
                 current_player = not current_player
                 observation_next = game.get_features(current_player)
                 p = self(observation)
                 p_next = self(observation_next)
-
+                if game.winner():
+                    break
                 observation = observation_next
-                game_step += 1
-
                 self.update_weights(p, p_next, eligibility_traces)
 
             winner = game.winner()[0]

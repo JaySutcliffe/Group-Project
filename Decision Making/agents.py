@@ -17,15 +17,19 @@ class TDAgent(Agent):
         self.model = model
 
     def get_move(self, game, possible_moves):
+        if not possible_moves:
+            return None
+
         v_best = 0
-        m_best = None
+        m_best = possible_moves[0]
 
         for m in possible_moves:
             game.apply_move(m)
             features = game.get_features(not self.player)
-            v = self.model(features)
-            v = 1. - v if self.player == 0 else v
-            if v > v_best:
+            v = self.model(features)[0].item()
+            v = -v if self.player == 0 else v
+            #print(str(self.player) + ", " + str(v))
+            if self.player == 0 and v < v_best or self.player == 1 and v > v_best:
                 v_best = v
                 m_best = m
             game.apply_move(m, undo=True)

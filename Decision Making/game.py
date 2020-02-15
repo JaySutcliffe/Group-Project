@@ -41,12 +41,11 @@ class Game:
         for p in range(len(self.agents)):
             for point in self.points:
                 checkers = [0., 0., 0., 0.]
-                if point[p] > 0:
-                    for i in range(point[p]):
-                        if i < 3:
-                            checkers[i] = 1.
-                        else:
-                            checkers[3] += 0.5
+                for i in range(point[p]):
+                    if i < 3:
+                        checkers[i] = 1.
+                    else:
+                        checkers[3] += 0.5
                 features += checkers
             features.append(float(self.bar[p]) / 2.)
             features.append(float(self.off[p]) / 15.)
