@@ -15,11 +15,11 @@ torch.set_default_tensor_type('torch.DoubleTensor')
 
 class EvaluationModel(nn.Module):
 
-    def __init__(self, hidden_units, alpha, lamda, seed=0, input_units=198, output_units=1):
+    def __init__(self, hidden_units, alpha, lamda, seed=0, input_units=294, output_units=1):
         super(EvaluationModel, self).__init__()
         self.alpha = alpha
         self.lamda = lamda
-
+        self.global_steps = 0
         self.start_episode = 0
 
         torch.manual_seed(seed)
@@ -72,11 +72,8 @@ class EvaluationModel(nn.Module):
         start_training = time.time()
 
         for episode in range(start_episode, n_episodes):
-            if episode % 30000 == 0:
-                self.lamda = max(0.7, 0.9*pow(0.96, episode/30000))
-
-            if episode % 40000 == 0:
-                self.alpha = max(0.01, 0.1*pow(0.96, episode/40000))
+            self.lamda = max(0.7, 0.9*pow(0.96, self.global_steps/30000))
+            self.alpha = max(0.01, 0.1*pow(0.96, self.global_steps/40000))
 
 
             eligibility_traces = [torch.zeros(weights.shape, requires_grad=False) for weights
@@ -100,7 +97,7 @@ class EvaluationModel(nn.Module):
 
             winner = game.winner()[0]
 
-            self.update_weights(self(observation), winner, eligibility_traces)
+            self.update_weights(self(observation), float(winner), eligibility_traces)
 
             wins[winner] += 1
             tot = sum(wins)
