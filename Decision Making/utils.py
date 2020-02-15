@@ -101,13 +101,19 @@ def args_plot(args):
 
                     if 'random' in opponents:
                         tag_scalar_dict = {}
-                        agents = [TDAgent(1, net), RandomAgent()]
-                        wins = [0, 0]
+                        agents = [TDAgent(0, net), RandomAgent()]
+                        wins1 = [0., 0.]
                         for i in range(n_episodes):
                             game = Game(agents)
-                            wins[game.play()[0]] += 1
-                        tag_scalar_dict['random'] = wins[0]
-                        print(wins)
+                            wins1[game.play()[0]] += 1
+                        tag_scalar_dict['random'] = wins1[0]
+                        agents = [RandomAgent(), TDAgent(1, net)]
+                        wins2 = [0., 0.]
+                        for i in range(n_episodes):
+                            game = Game(agents)
+                            wins2[game.play()[0]] += 1
+                        tag_scalar_dict['random'] = wins2[0]
+                        print("0: " + str(wins1[0]/sum(wins1)) + " 1: " + str(wins2[1]/sum(wins2)))
                         writer.add_scalars('wins_vs_random/', tag_scalar_dict, global_step)
 
                     global_step += 1
