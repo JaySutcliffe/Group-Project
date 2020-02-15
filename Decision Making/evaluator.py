@@ -51,7 +51,7 @@ class EvaluationModel(nn.Module):
         return delta
 
     def checkpoint(self, checkpoint_path, episode, global_steps, name_experiment):
-        path = checkpoint_path + "/{}_{}_{}.tar".format(name_experiment, datetime.datetime.now().strftime('%Y%m%d_%H%M_%S_%f'), step + 1)
+        path = checkpoint_path + "/{}_{}_{}.tar".format(name_experiment, datetime.datetime.now().strftime('%Y%m%d_%H%M_%S_%f'), episode + 1)
         torch.save({'episode': episode + 1, 'global_steps': global_steps, 'model_state_dict': self.state_dict()}, path)
         print("\nCheckpoint saved: {}".format(path))
 
