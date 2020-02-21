@@ -3,6 +3,13 @@ import random
 import numpy as np
 
 
+def get_move_raw_steps(move):
+    steps = []
+    for action in move:
+        steps += action.get_raw_steps()
+    return steps
+
+
 class Agent(ABC):
 
     @abstractmethod

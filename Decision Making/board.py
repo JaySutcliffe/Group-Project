@@ -1,5 +1,6 @@
 import numpy as np
 from action import Action
+from copy import deepcopy
 
 class Board:
 
@@ -127,5 +128,32 @@ class Board:
         pos.append(-self.off[1]) #27
         return np.array(pos)
 
+    def apply_cv_update(self, cv_output):
+        bar_white = cv_output[0]
+        bar_black = cv_output[1]
+        add = cv_output[2]
+        sub = cv_output[3]
 
+        for tup in sub:
+            add.append((tup[0], -tup[1], tup[2]))
+        self.bar = [bar_white, bar_black]
 
+        for change in add:
+            colour = change[0]
+            player = 0 if colour == "W" else 1
+            amount = change[1]
+            spike = change[2]
+            spike = spike if player == 0 else 23-spike
+            self.points[player][spike] += amount
+
+        self.off = [15-sum(self.points[0])-self.bar[0],
+                    15-sum(self.points[1])-self.bar[1]]
+
+    def read_cv_output(self, cv_output, current_player, current_rolls):
+        new_board = deepcopy(self)
+        new_board.apply_cv_update(cv_output)
+        new_board_features = new_board.get_features(not current_player)
+        if new_board_features not in self.get_possible_moves(current_player, current_rolls):
+            print("ILLEGAL MOVE")
+        else:
+            self.apply_cv_update(cv_output)
