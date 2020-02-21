@@ -15,7 +15,7 @@ torch.set_default_tensor_type('torch.DoubleTensor')
 
 class EvaluationModel(nn.Module):
 
-    def __init__(self, hidden_units, alpha, lamda, seed=0, input_units=294, output_units=1):
+    def __init__(self, hidden_units, alpha, lamda, seed=0, input_units=198, output_units=1):
         super(EvaluationModel, self).__init__()
         self.alpha = alpha
         self.lamda = lamda
@@ -71,7 +71,7 @@ class EvaluationModel(nn.Module):
         durations = []
         start_training = time.time()
 
-        global_steps = 0
+        global_steps = self.start_global_steps
 
         for episode in range(start_episode, n_episodes):
 
@@ -79,24 +79,24 @@ class EvaluationModel(nn.Module):
                                   in list(self.parameters())]
             game = Game(agents)
             current_player = random.randint(0, 1)
-            observation = game.get_features(current_player)
+            features = game.board.get_features(current_player)
             t = time.time()
 
             for game_step in count():
 
                 game.next_turn(current_player, game.roll_dice())
                 current_player = not current_player
-                observation_next = game.get_features(current_player)
-                p = self(observation)
-                p_next = self(observation_next)
+                features_next = game.board.get_features(current_player)
+                p = self(features)
+                p_next = self(features_next)
                 if game.winner():
                     break
-                observation = observation_next
+                features = features_next
                 self.update_weights(p, p_next, eligibility_traces)
 
             winner = game.winner()[0]
 
-            self.update_weights(self(observation), float(winner), eligibility_traces)
+            self.update_weights(self(features), float(winner), eligibility_traces)
 
             wins[winner] += 1
             tot = sum(wins)

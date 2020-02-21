@@ -1,6 +1,6 @@
 import os
 import sys
-from agents import TDAgent, RandomAgent
+from agents import TDAgent, RandomAgent, PubevalAgent
 from evaluator import EvaluationModel
 from torch.utils.tensorboard import SummaryWriter
 from game import Game
@@ -44,7 +44,7 @@ def args_train(args):
         write_file(
             save_path, save_path=args.save_path, command_line_args=args, hidden_units=hidden_units, alpha=net.alpha, lamda=net.lamda,
             n_episodes=n_episodes, save_step=save_step, start_episode=net.start_episode, name_experiment=name,
-            restored_model=args.model, seed=seed,
+            restored_model=args.model, seed=seed, start_global_steps=net.start_global_steps,
             modules=[module for module in net.modules()]
         )
 
@@ -101,12 +101,14 @@ def args_plot(args):
 
                     if 'random' in opponents:
                         tag_scalar_dict = {}
-                        agents = [TDAgent(0, net), RandomAgent()]
+                        agents = [PubevalAgent(0), TDAgent(1, net)]
                         wins1 = [0., 0.]
                         for i in range(n_episodes):
                             game = Game(agents)
                             wins1[game.play()[0]] += 1
                         tag_scalar_dict['random'] = wins1[0]
+                        print("Load {}: {}".format(os.path.join(root, file), float(wins1[1])/float(sum(wins1))))
+                        """
                         agents = [RandomAgent(), TDAgent(1, net)]
                         wins2 = [0., 0.]
                         for i in range(n_episodes):
@@ -115,7 +117,7 @@ def args_plot(args):
                         tag_scalar_dict['random'] = wins2[0]
                         print("0: " + str(wins1[0]/sum(wins1)) + " 1: " + str(wins2[1]/sum(wins2)))
                         writer.add_scalars('wins_vs_random/', tag_scalar_dict, global_step)
-
+                        """
                     global_step += 1
 
                     writer.close()
