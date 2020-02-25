@@ -69,7 +69,7 @@ class Game:
 if __name__ == "__main__":
     from evaluator import EvaluationModel
     net = EvaluationModel(hidden_units=40, alpha=0.1, lamda=None)
-    net.load(checkpoint_path="./saved_models/exp4/exp1_20200221_1132_31_702565_129000.tar")
+    net.load(checkpoint_path="./saved_models/exp4/exp1_20200221_1714_18_357821_188000.tar")
     td_agent = TDAgent(0, net)
     human_agent = HumanAgent(1)
     game = Game([td_agent, human_agent])
