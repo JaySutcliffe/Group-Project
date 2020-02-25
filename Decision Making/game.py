@@ -55,7 +55,12 @@ class Game:
         self.next_turn(current_player, roll=roll1, pretty=True)
         while not self.winner():
             current_player = not current_player
+            print()
             print(self.agents[current_player].name + "'s turn")
+            print("Board state:")
+            print("\tSpikes array:" + str(game.board.points))
+            print("\tBar: " + str(game.board.bar))
+            print("\tOff: " + str(game.board.off))
             roll = self.roll_dice()
             print("Dice roll: " + str(roll))
             self.next_turn(current_player, roll=roll, pretty=True)
