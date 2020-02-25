@@ -15,18 +15,15 @@ torch.set_default_tensor_type('torch.DoubleTensor')
 
 class EvaluationModel(nn.Module):
 
-    def __init__(self, hidden_units, alpha, lamda, seed=0, input_units=198, output_units=1):
+    def __init__(self, hidden_units, alpha, lamda, num_inputs=198):
         super(EvaluationModel, self).__init__()
         self.alpha = alpha
         self.lamda = lamda
         self.start_global_steps = 0
         self.start_episode = 0
 
-        torch.manual_seed(seed)
-        random.seed(seed)
-
-        self.hidden = nn.Sequential(nn.Linear(input_units, hidden_units), nn.Sigmoid())
-        self.output = nn.Sequential(nn.Linear(hidden_units, output_units), nn.Sigmoid())
+        self.hidden = nn.Sequential(nn.Linear(num_inputs, hidden_units), nn.Sigmoid())
+        self.output = nn.Sequential(nn.Linear(hidden_units, 1), nn.Sigmoid())
 
     def forward(self, x):
         x = torch.from_numpy(np.array(x))
