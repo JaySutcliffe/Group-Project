@@ -2,7 +2,7 @@ import math
 
 board_width = 220
 board_depth = 220
-arm_to_board = 200  # TODO
+arm_to_board = 100  # TODO
 
 STUD_LENGTH = 7.985
 

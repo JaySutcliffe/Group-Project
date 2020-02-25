@@ -9,16 +9,20 @@ def test_theta():
     plot_translation(circle,relative=True)
 
 def plot_x():
-    points = [(a,0,0) for a in range(0,220)]
-    plot_translation(points)
+    points = [(a,100,0) for a in range(0,220)]
+    plot_translation(points,relative=True)
 
 def plot_y():
-    points = [(0, a, 0) for a in range(0, 220)]
-    plot_translation(points)
+    points = [(0, a, 0) for a in range(100, 320)]
+    plot_translation(points,relative=True)
 
 def plot_z():
-    points = [(0, 50, a) for a in range(0, 50)]
+    points = [(0, 0, a) for a in range(0, 50)]
     plot_translation(points)
+
+def plot_move_around_board():
+    circle = [(110 * math.cos(a * math.pi / 180)+110, 110 * math.sin(a * math.pi / 180)+110, 0) for a in range(360)]
+    plot_translation(circle)
 
 
 def plot_translation(points,relative=False):
@@ -34,6 +38,7 @@ def plot_translation(points,relative=False):
     plt.legend()
     plt.show()
 
+plot_move_around_board()
 test_theta()
 plot_x()
 plot_y()
