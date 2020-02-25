@@ -5,7 +5,7 @@ import utils
 def formatter(prog):
     return argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=100, width=180)
 
-
+"""
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='TD-Gammon', formatter_class=lambda prog: formatter(prog))
     subparsers = parser.add_subparsers(help='Train TD-Network | Evaluate Agent(s) | Plot Wins')
@@ -43,3 +43,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     args.func(args)
+"""
