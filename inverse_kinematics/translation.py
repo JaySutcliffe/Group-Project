@@ -1,4 +1,6 @@
 import math
+import time
+from s import *
 
 board_width = 220
 board_depth = 220
@@ -81,3 +83,20 @@ def relative_transform(x,y,z):
     theta, r, z = arm_centric_to_arm_cylindrical(x, y, z)
     a, b = arm_angle_to_motor_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
     return theta, a, b
+
+def coord_to_motor(x,y,z):
+    theta, a, b = transform(x,y,z)
+    return int(math.degrees(theta)), int(math.degrees(a)), int(math.degrees(b))
+    
+
+def main():
+    s = Server(HOST, PORT)
+    for i in range(10):
+        theta, a, b = coord_to_motor(i, 0, i*5)
+        s.send_pos('A', a)
+        print(str(theta), str(a), str(b))
+        time.sleep(1)
+        
+
+if __name__== "__main__":
+    main()
