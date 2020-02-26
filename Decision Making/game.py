@@ -1,4 +1,5 @@
 import random
+import vision
 from board import Board
 from agents import TDAgent, HumanAgent
 
@@ -75,7 +76,8 @@ if __name__ == "__main__":
     from evaluator import EvaluationModel
     net = EvaluationModel(hidden_units=40, alpha=0.1, lamda=None)
     net.load(checkpoint_path="./saved_models/exp4/exp1_20200221_1714_18_357821_188000.tar")
-    td_agent = TDAgent(0, net)
-    human_agent = HumanAgent(1)
+    v = vision.Vision()
+    td_agent = TDAgent(0, net, v)
+    human_agent = HumanAgent(1, v)
     game = Game([td_agent, human_agent])
     game.play_real()
