@@ -142,7 +142,7 @@ class Board:
             player = 0 if colour == "W" else 1
             amount = change[1]
             spike = change[2]
-            spike = spike if player == 0 else 23-spike
+            spike = spike if player == 1 else 23-spike
             self.points[player][spike] += amount
 
         self.off = [15-sum(self.points[0])-self.bar[0],
