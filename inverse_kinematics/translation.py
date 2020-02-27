@@ -4,7 +4,7 @@ from s import *
 
 board_width = 220
 board_depth = 220
-arm_to_board = 200  # TODO
+arm_to_board = 200 # TODO
 
 STUD_LENGTH = 7.985
 
@@ -86,16 +86,22 @@ def relative_transform(x,y,z):
 
 def coord_to_motor(x,y,z):
     theta, shoulder,elbow = transform(x,y,z)
-    return int(7*math.degrees(theta)), int(66.67*math.degrees(shoulder)), int(5*math.degrees(elbow))
+    print(str(math.degrees(theta)) + " " + str(math.degrees(shoulder)) + " " + str(math.degrees(elbow)))
+    return int(7*math.degrees(theta)), int(66.68*math.degrees(shoulder)), int(5*math.degrees(elbow))
     
 
 def main():
     s = Server(HOST, PORT)
-    for i in range(10):
-        theta, shoulder, elbow = coord_to_motor(i, 0, i*5)
-        s.send_pos('A', shoulder)
-        print(str(theta), str(shoulder), str(elbow))
-        time.sleep(1)
+    theta, shoulder, elbow = coord_to_motor(0, 0 , 50)
+    s.send_pos('A', theta)
+    s.send_pos('B', shoulder)
+    s.send_pos('C', elbow)
+    time.sleep(1)
+    theta, shoulder, elbow = coord_to_motor(220, 220 , 10)
+    s.send_pos('A', theta)
+    s.send_pos('B', shoulder)
+    s.send_pos('C', elbow)
+    time.sleep(5)
         
 
 if __name__== "__main__":
