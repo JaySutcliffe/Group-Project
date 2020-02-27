@@ -40,7 +40,7 @@ def arm_centric_to_arm_cylindrical(x, y, z):
     arm_r = math.sqrt(r ** 2 - horizontal_arm_offset ** 2)
     arm_angle = theta - math.atan2(horizontal_arm_offset, arm_r)
 
-    return arm_angle, arm_r, z
+    return arm_angle-math.pi/2, arm_r, z
 
 
 def offset_arm_plane(r, z):
