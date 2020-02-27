@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import random
 import numpy as np
+import vision
 from copy import deepcopy
 
 
@@ -16,10 +17,11 @@ class Agent(ABC):
 
 class TDAgent(Agent):
 
-    def __init__(self, player, model):
+    def __init__(self, player, model, computer_vision):
         super().__init__(player)
         self.model = model
         self.name = "Computer"
+        self.computer_vision = computer_vision
 
     def get_move(self, game, possible_moves):
         if not possible_moves:
@@ -41,32 +43,31 @@ class TDAgent(Agent):
         steps = []
         for action in best_move:
             steps += action.get_raw_steps()
-        """
-        Computer Vision / Robotics: Give steps to robot
-        """
-
+        
+        for s in steps: 
+          print(s)  
+          print(self.computer_vision.get_move(s))
 
         return best_move
 
 
 class HumanAgent(Agent):
 
-    def __init__(self, player):
+    def __init__(self, player, computer_vision):
         super().__init__(player)
         self.name = "Human"
+        self.computer_vision = computer_vision
 
     def get_move(self, game, possible_moves):
         while True:
             input("Please type anything once you've played your move.")
 
-            """
-            Computer Vision: Determine what the move was
-            """
-            cv_output = None
+            cv_output = self.computer_vision.take_turn()
 
             new_board = deepcopy(game.board)
             new_board.apply_cv_update(cv_output)
             new_board_features = new_board.get_features(not self.player)
+            print(new_board.points)
             if new_board_features in possible_moves:
                 return possible_moves[new_board_features]
             print("Invalid move. Please try again.")
