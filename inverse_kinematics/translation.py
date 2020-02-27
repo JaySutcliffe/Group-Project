@@ -16,10 +16,10 @@ elbow_length = math.sqrt(elbow_across_length ** 2 + elbow_down_length ** 2
 #elbow_angle_from_horiz = math.acos((-elbow_down_length**2+elbow_across_length**2+elbow_length**2)/(2*elbow_across_length*elbow_length))
 shoulder_length = 26 * STUD_LENGTH
 
-horizontal_arm_offset = 25  # TODO
-base_height_offset = 10  # TODO
-claw_height_offset = 1  # TODO
-claw_length_offset = 1  # TODO
+horizontal_arm_offset = 0 * STUD_LENGTH
+base_height_offset = 6 * STUD_LENGTH
+claw_height_offset = 2 * STUD_LENGTH 
+claw_length_offset = 11 * STUD_LENGTH
 
 
 # Original coordinate system uses corner of board close right to arm as (0,0,0)
@@ -76,25 +76,25 @@ def arm_angle_to_motor_angles(r, phi):
 
 def transform(x,y,z):
     theta, r,z = arm_centric_to_arm_cylindrical(*board_to_arm_centric(x,y,z))
-    a,b = arm_angle_to_motor_angles(*arm_coordinates_to_angle(*offset_arm_plane(r,z)))
-    return theta,a,b
+    shoulder,elbow = arm_angle_to_motor_angles(*arm_coordinates_to_angle(*offset_arm_plane(r,z)))
+    return theta,shoulder,elbow
 
 def relative_transform(x,y,z):
     theta, r, z = arm_centric_to_arm_cylindrical(x, y, z)
-    a, b = arm_angle_to_motor_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
-    return theta, a, b
+    shoulder,elbow = arm_angle_to_motor_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
+    return theta, shoulder, elbow
 
 def coord_to_motor(x,y,z):
-    theta, a, b = transform(x,y,z)
-    return int(math.degrees(theta)), int(math.degrees(a)), int(math.degrees(b))
+    theta, shoulder,elbow = transform(x,y,z)
+    return int(7*math.degrees(theta)), int(66.67*math.degrees(shoulder)), int(5*math.degrees(elbow))
     
 
 def main():
     s = Server(HOST, PORT)
     for i in range(10):
-        theta, a, b = coord_to_motor(i, 0, i*5)
-        s.send_pos('A', a)
-        print(str(theta), str(a), str(b))
+        theta, shoulder, elbow = coord_to_motor(i, 0, i*5)
+        s.send_pos('A', shoulder)
+        print(str(theta), str(shoulder), str(elbow))
         time.sleep(1)
         
 
