@@ -128,8 +128,8 @@ class Board:
         return np.array(pos)
 
     def apply_cv_update(self, cv_output):
-        bar_white = cv_output[0]
-        bar_black = cv_output[1]
+        bar_white = cv_output[1]
+        bar_black = cv_output[0]
         add = cv_output[2]
         sub = cv_output[3]
 
