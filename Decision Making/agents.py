@@ -43,7 +43,7 @@ class TDAgent(Agent):
         steps = []
         for action in best_move:
             steps += action.get_raw_steps()
-        
+
         for s in steps: 
             print(s)
             success = False
@@ -69,7 +69,7 @@ class HumanAgent(Agent):
         if len(possible_moves) == 0:
           print("No moves possible")
           return None
-        
+
         while True:
             # input("Please type anything once you've played your move.")
 

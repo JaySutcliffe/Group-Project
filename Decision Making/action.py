@@ -17,7 +17,7 @@ class Action:
     def get_raw_steps(self):
         steps = []
         s = self.start if self.start == Action.BAR or self.player == 0 else 23-self.start
-        e = self.end if self.start == Action.OFF_BOARD or self.player == 0 else 23-self.end
+        e = self.end if self.end == Action.OFF_BOARD or self.player == 0 else 23-self.end
         if self.bars:
             steps.append(Step(player=int(not self.player), start=e, end=Action.BAR))
         steps.append(Step(player=int(self.player), start=s, end=e))
