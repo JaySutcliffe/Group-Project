@@ -6,6 +6,7 @@ board_width = 220
 board_depth = 220
 arm_to_board = 200  
 
+
 STUD_LENGTH = 7.985
 
 angled_beam_angle = math.acos(3 / 5)
@@ -85,6 +86,7 @@ def transform(x, y, z):
     print("Transform : (" + str(theta) + ", " + str(shoulder) + ", " + str(elbow) + ")")
     print("r: " + str(r))
     #return theta, shoulder - shoulder_offset, elbow + elbow_offset
+    shoulder, elbow = arm_angle_to_motor_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
     return theta, shoulder, elbow
 
 
@@ -126,7 +128,7 @@ def main():
     s.send_pos('B', int(66.68*90))
     s.send_pos('C', 5*90)
     s.send_pos('D', 0)
-        
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     main()
