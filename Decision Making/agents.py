@@ -45,8 +45,15 @@ class TDAgent(Agent):
             steps += action.get_raw_steps()
         
         for s in steps: 
-          print(s)  
-          print(self.computer_vision.get_move(s))
+            print(s)
+            success = False
+            while not success:
+                try:
+                    print(self.computer_vision.get_move(s))
+                    success = True
+                except:
+                    input("Try again?... ")
+            input("Move piece... ")
 
         return best_move
 
@@ -59,8 +66,12 @@ class HumanAgent(Agent):
         self.computer_vision = computer_vision
 
     def get_move(self, game, possible_moves):
+        if len(possible_moves) == 0:
+          print("No moves possible")
+          return None
+        
         while True:
-            input("Please type anything once you've played your move.")
+            # input("Please type anything once you've played your move.")
 
             cv_output = self.computer_vision.take_turn()
 
@@ -68,9 +79,10 @@ class HumanAgent(Agent):
             new_board.apply_cv_update(cv_output)
             new_board_features = new_board.get_features(not self.player)
             print(new_board.points)
+            print(new_board.bar)
             if new_board_features in possible_moves:
                 return possible_moves[new_board_features]
-            print("Invalid move. Please try again.")
+            print("Invalid move. Please try again... ")
 
 
 class PubevalAgent(Agent):

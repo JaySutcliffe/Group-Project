@@ -35,7 +35,7 @@ import numpy as np
 # 1 is side of board turning 90 degrees anticlockwise
 # 2 is where the white player sits
 # 3 is 90 degrees clockwise from where the black player sits
-BOARD_SIDE = 3
+BOARD_SIDE = 2
 BOARD_ANGLE = BOARD_SIDE * 90
 
 SPIKE_WIDTH = 1 / 13
@@ -55,10 +55,16 @@ BORDER_COLOUR_HIGHER = [60,255,255]
 TOKEN_RADIUS = SPIKE_RADIUS
 TOKEN_GAP = SPIKE_WIDTH + 0.2 / 22
 
+debug = True
 
 # https://www.pyimagesearch.com/2014/08/04/opencv-python-color-detection/ using to mask the image to only deal with parts of a certain colour.
 
-# In[278]:
+
+def debug_show(image):
+    if debug:
+      cv2.imshow("Computer Vision", image)
+      cv2.waitKey(0)
+      cv2.destroyAllWindows()
 
 
 def get_shapes(image, lower, upper, seperate = False):
@@ -72,9 +78,7 @@ def get_shapes(image, lower, upper, seperate = False):
     mask = cv2.inRange(hsv, lower, upper)
     image = cv2.bitwise_and(image, image, mask = mask)
     
-    cv2.imshow("output", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    debug_show(image)
     
     cnt = None
     
@@ -85,18 +89,19 @@ def get_shapes(image, lower, upper, seperate = False):
     if seperate:
         # This is code found from the internet to seperate blobs into circles
         kernel = np.ones((3,3),np.uint8)
+        # Removes small unwanted features
         opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel, iterations = 2)
         # sure background area
-        sure_bg = cv2.dilate(opening,kernel,iterations=3)
+        # sure_bg = cv2.dilate(opening,kernel,iterations=3)
         # Finding sure foreground area
+        # Further away a point is from an edge the grayer it becomes
         dist_transform = cv2.distanceTransform(opening,cv2.DIST_L2,5)
+        # Binarise with threshold and end up with the white parts
         ret, sure_fg = cv2.threshold(dist_transform,0.7*dist_transform.max(),255,0)
         # Finding unknown region
         sure_fg = np.uint8(sure_fg)
-        unknown = cv2.subtract(sure_bg,sure_fg)
-        cv2.imshow("circles mask", sure_fg)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # unknown = cv2.subtract(sure_bg,sure_fg)
+        
         # We find the contours on the small circles calculated from the code
         cnts = cv2.findContours(sure_fg.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     else:
@@ -139,18 +144,15 @@ def get_shapes(image, lower, upper, seperate = False):
         
         # Code off of the internet that can plot the contours.
         cv2.drawContours(image, [c], -1, (0, 255, 0), 2)
-        cv2.circle(image, (x, y), 7, (255, 255, 255), -1)
+        cv2.circle(image, (x, y), 7, (255, 255, 255), -1)       
         cv2.putText(image, "center", (x - 20, y - 20),
         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         
-        cv2.imshow('board.jpg',image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-                
+    debug_show(image)
+    
     return np.vstack((xs,ys))
 
 
-# In[279]:
 
 
 def perspective_transform(image):
@@ -182,12 +184,9 @@ def perspective_transform(image):
     pt = cv2.getPerspectiveTransform(rect, dst)
     warped = cv2.warpPerspective(image, pt, (maxWidth, maxHeight))
     
-    
     return warped
-
-
-# In[280]:
-
+    
+    
 
 def report_positions(image):
     # Getting the dimensions so the image coordinates
@@ -242,9 +241,6 @@ def report_positions(image):
     return (board, bar_black, bar_white)
 
 
-# In[281]:
-
-
 def count_colours(spike):
     # Dealing with floating points so do not want to do ==
     spike = spike
@@ -265,14 +261,9 @@ def count_colours(spike):
             return ("E", black_count - white_count)
 
 
-# In[282]:
-
 
 def abstract_board(board):
     return [count_colours(spike) for spike in board]
-
-
-# In[283]:
 
 
 class VisionError(Exception):
@@ -323,8 +314,6 @@ test_board4 = [("W", 1),("W", 1),("N", 0),("N", 0),("N", 0),("B", 5),
               ("W", 2),("W", 1),("B", 2),("W", 2),("N", 0),("N", 0)]
 
 
-# In[285]:
-
 
 def compare_boards(old_board, new_board):
     # Function to that compares an old board and a new board,
@@ -361,8 +350,6 @@ def compare_boards(old_board, new_board):
     return add, sub
 
 
-# In[286]:
-
 
 # Small test module used when not testing with actual images.
 def test_compare():
@@ -395,7 +382,7 @@ class Vision:
         self.bar_white = None
         self.bar_black = None
         # The index of the webcam
-        self.camera_index = 0
+        self.camera_index = 1
         
         self.free_spot = (SPIKE_WIDTH * 6.5, TOKEN_RADIUS)
         
@@ -435,7 +422,7 @@ class Vision:
             # a suitable position for the arm to put the piece down at
             pos1 = self.free_spot
             if len(self.bar_black) == 0:
-                self.free_spot = (self.free_spot[0], self.free_spot[1] + TOKEN_RADIUS)
+                self.free_spot = (self.free_spot[0], TOKEN_RADIUS)
             else:
                 self.free_spot = (self.free_spot[0], self.free_spot[1] + TOKEN_GAP)
         elif end == "OFF":
@@ -481,20 +468,20 @@ class Vision:
         
     def update_board(self):
         # Capturing the image from a camera
-        cam = cv2.VideoCapture(self.camera_index)
+        cam = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         retrieved, image = cam.read()
         
         if retrieved == False:
             raise CameraReadError("Error reading from webcam")
+        
+        
         
         # Rotating the image
         height, width, channels = image.shape
         M = cv2.getRotationMatrix2D((width / 2, height / 2), BOARD_ANGLE, 1)
         image = cv2.warpAffine(image, M, (width, height))
         
-        cv2.imshow('board.jpg',image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        debug_show(image)
         
         # Transforming the image to only include the board
         image = perspective_transform(image)
@@ -505,11 +492,14 @@ class Vision:
         
         self.abstract = abstract_board(self.physical)
         
+        cam.release()
+        cv2.destroyAllWindows() # Handles the releasing of the camera accordingly
+        
         # Returning old board so it can be used for comparisons
         return old_board
         
         
-    def play(self):
+    def test_play(self):
         while input("Capture image before move...  (q and enter to quit)") != "q":
             try:
                 self.update_board()
@@ -522,33 +512,23 @@ class Vision:
                 print(add)
                 print(sub)
             except VisionError as e:
-                print("####### Move failed #######")
-                print("Reason: ")
-                print(e.message)
-                print("###########################")
+                print("Error with move: " + e.message)
                 
     def take_turn(self):
+        # Function that takes two images and compares them, reporting changes
+        # in the board for computer vision to use
         while True:
             try:
                 input("Capture image before move... ")
                 self.update_board()
                 input("Capture image after move... ")
+                
                 old_board = self.update_board()
                 add, sub = compare_boards(old_board, self.abstract)
                 return (len(self.bar_black), len(self.bar_white), add, sub)
             except VisionError as e:
-                print("####### Move failed #######")
-                print("Reason: ")
-                print(e.message)
-                print("###########################")
+                print("Error with move: " + e.message)
 
-
-# In[288]:
-
-
-def test_play ():
-    v = Vision()
-    v.play()
     
 def test_get_move():
     v = Vision()
@@ -562,9 +542,6 @@ def test_get_move():
     
     
 # test_get_move()
-
-
-# In[ ]:
 
 
 def test_image():

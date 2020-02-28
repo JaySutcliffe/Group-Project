@@ -32,7 +32,7 @@ class Game:
         possible_moves = self.board.get_possible_moves(player, roll)
         move = self.agents[player].get_move(self, possible_moves)
         self.board.apply_move(move)
-        if pretty:
+        if pretty and move:
             print("Move played: " + str(move))
 
     def play(self):
@@ -48,20 +48,20 @@ class Game:
         print(self.agents[1].name + " is BLACK")
         roll1, current_player = self.starting_roll()
         print(self.agents[current_player].name + " starts")
-        print("Board state:")
-        print("\tSpikes array:" + str(game.board.points))
-        print("\tBar: " + str(game.board.bar))
-        print("\tOff: " + str(game.board.off))
+        # print("Board state:")
+        # print("\tSpikes array:" + str(game.board.points))
+        # print("\tBar: " + str(game.board.bar))
+        # print("\tOff: " + str(game.board.off))
         print("Dice roll: " + str(roll1))
         self.next_turn(current_player, roll=roll1, pretty=True)
         while not self.winner():
             current_player = not current_player
             print()
             print(self.agents[current_player].name + "'s turn")
-            print("Board state:")
-            print("\tSpikes array:" + str(game.board.points))
-            print("\tBar: " + str(game.board.bar))
-            print("\tOff: " + str(game.board.off))
+            # print("Board state:")
+            # print("\tSpikes array:" + str(game.board.points))
+            # print("\tBar: " + str(game.board.bar))
+            # print("\tOff: " + str(game.board.off))
             roll = self.roll_dice()
             print("Dice roll: " + str(roll))
             self.next_turn(current_player, roll=roll, pretty=True)
