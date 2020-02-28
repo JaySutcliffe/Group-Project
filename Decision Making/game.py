@@ -1,7 +1,7 @@
 import random
 import vision
 from board import Board
-from agents import TDAgent, HumanAgent
+from agents import TDAgent, HumanAgent, Difficulty
 
 class Game:
 
@@ -91,12 +91,15 @@ if __name__ == "__main__":
     human_agent = HumanAgent(1, v)
     playing_agents = [td_agent, human_agent]
     game = Game(playing_agents)
-
-    starting_points = [
-        [0,0,0,0,2,3,0,3,0,0,0,0,6,0,0,0,0,0,0,0,0,1,0,0],
-        [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
-    ]
-    starting_bar = [0,0]
-    starting_roll = [6,4]
-    starting_player = 1
-    game.play_real_from_given_state(starting_points, starting_bar, playing_agents, starting_player, starting_roll)
+    set_start_state = True
+    if set_start_state:
+        starting_points = [
+            [0,0,0,0,2,3,0,3,0,0,0,0,6,0,0,0,0,0,0,0,0,1,0,0],
+            [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
+        ]
+        starting_bar = [0,0]
+        starting_roll = [6,4]
+        starting_player = 0
+        game.play_real_from_given_state(starting_points, starting_bar, playing_agents, starting_player, starting_roll)
+    else:
+        game.play_real()
