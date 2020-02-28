@@ -77,9 +77,6 @@ def transform(x, y, z):
     theta, r, z = arm_centric_to_arm_cylindrical(*board_to_arm_centric(x, y, z))
     #cubic = (295.3898) + (-3.30652 * r) + (0.011514 * r**2) + (-1.39483e-5 * r**3)
     cubic = (295.3898) + (-3.30652 * r) + (0.011514 * r**2) + (-1.39483e-5 * r**3)
-    z_corrected = z
-    print(cubic)
-    print(z_corrected)
     shoulder, elbow = arm_angle_to_motor_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
     #shoulder_offset = (-0.05161 * r) + (0.00122 * z) + 4.35543
     #elbow_offset = (-0.02777 * r) + (-0.07052 * z) + 24.82531
