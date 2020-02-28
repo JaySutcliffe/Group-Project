@@ -9,6 +9,14 @@ class Game:
         self.board = Board()
         self.agents = agents
 
+    def play_real_from_given_state(self, points, bar, agents, player1, roll1):
+        self.agents = agents
+        self.board.points = points
+        self.board.bar = bar
+        self.board.off = [15-sum(points[p]) - bar[p] for p in range(2)]
+        self.board.homed = [sum(points[p][0:6]) + self.board.off[p] for p in range(2)]
+        self.play_real(roll1, player1)
+
     def starting_roll(self):
         roll = [0, 0]
         while roll[0] == roll[1]:
@@ -35,18 +43,20 @@ class Game:
         if pretty and move:
             print("Move played: " + str(move))
 
-    def play(self):
-        roll1, current_player = self.starting_roll()
+    def play(self, roll1=None, current_player=None):
+        if roll1 is None or current_player is None:
+            roll1, current_player = self.starting_roll()
         self.next_turn(current_player, roll1)
         while not self.winner():
             current_player = not current_player
             self.next_turn(current_player)
         return self.winner()
 
-    def play_real(self):
+    def play_real(self, roll1=None, current_player=None):
         print(self.agents[0].name + " is WHITE")
         print(self.agents[1].name + " is BLACK")
-        roll1, current_player = self.starting_roll()
+        if roll1 is None or current_player is None:
+            roll1, current_player = self.starting_roll()
         print(self.agents[current_player].name + " starts")
         # print("Board state:")
         # print("\tSpikes array:" + str(game.board.points))
@@ -79,5 +89,14 @@ if __name__ == "__main__":
     v = vision.Vision()
     td_agent = TDAgent(0, net, v)
     human_agent = HumanAgent(1, v)
-    game = Game([td_agent, human_agent])
-    game.play_real()
+    playing_agents = [td_agent, human_agent]
+    game = Game(playing_agents)
+
+    starting_points = [
+        [0,0,0,0,2,3,0,3,0,0,0,0,6,0,0,0,0,0,0,0,0,1,0,0],
+        [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
+    ]
+    starting_bar = [0,0]
+    starting_roll = [6,4]
+    starting_player = 1
+    game.play_real_from_given_state(starting_points, starting_bar, playing_agents, starting_player, starting_roll)
