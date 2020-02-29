@@ -56,18 +56,17 @@ BORDER_COLOUR_HIGHER = [60,255,255]
 TOKEN_RADIUS = SPIKE_RADIUS
 TOKEN_GAP = SPIKE_WIDTH + 0.2 / 22
 
-debug = True
+debug = False
 
 # https://www.pyimagesearch.com/2014/08/04/opencv-python-color-detection/ using to mask the image to only deal with parts of a certain colour.
 
 
-def debug_show(image, name = "Computer Vision"):
+def debug_log(image, name = "Computer Vision"):
     if debug:
-      cv2.imshow("Computer Vision", image)
-      cv2.waitKey(0)
-      cv2.destroyAllWindows()
-    else:
-      cv2.imwrite(name, image)
+        cv2.imshow(name, image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    cv2.imwrite("./logs/" + name + ".jpg", image)
 
 
 def get_shapes(image, lower, upper, seperate = False, name = ""):
@@ -81,7 +80,7 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
     mask = cv2.inRange(hsv, lower, upper)
     image = cv2.bitwise_and(image, image, mask = mask)
     
-    debug_show(image, "Mask " + name)
+    debug_log(image, "Mask " + name)
     
     cnt = None
     
@@ -105,7 +104,7 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
         sure_fg = np.uint8(sure_fg)
         # unknown = cv2.subtract(sure_bg,sure_fg)
         
-        debug_show(image, "Split " + name)
+        debug_log(sure_fg, "Split " + name)
         
         # We find the contours on the small circles calculated from the code
         cnts = cv2.findContours(sure_fg.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
@@ -153,7 +152,7 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
         cv2.putText(image, "center", (x - 20, y - 20),
         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         
-    debug_show(image, "Centers " + name)
+    debug_log(image, "Centers " + name)
     
     return np.vstack((xs,ys))
 
@@ -162,7 +161,7 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
 
 def perspective_transform(image):
     
-    pts = np.transpose(get_shapes(image, BORDER_COLOUR_LOWER, BORDER_COLOUR_HIGHER))
+    pts = np.transpose(get_shapes(image, BORDER_COLOUR_LOWER, BORDER_COLOUR_HIGHER, False, "Border"))
     rect = np.zeros((4, 2), dtype = "float32")
 
     a = pts.sum(axis = 1)
@@ -482,10 +481,12 @@ class Vision:
         M = cv2.getRotationMatrix2D((width / 2, height / 2), BOARD_ANGLE, 1)
         image = cv2.warpAffine(image, M, (width, height))
         
-        debug_show(image, "Image taken")
+        debug_log(image, "Image taken")
         
         # Transforming the image to only include the board
         image = perspective_transform(image)
+        
+        debug_log(image, "Image transformed")
         
         # Retrieving the piece details from the board
         self.physical, self.bar_black, self.bar_white = report_positions(image)
@@ -553,7 +554,7 @@ def test_image():
     retrieved = True
     if retrieved:
         # Showing the image before the transformation
-        image = cv2.imread('WhiteBlue5.jpg.jpg')
+        image = cv2.imread('WhiteBlue3.jpg')
         cv2.imshow('board.jpg',image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()

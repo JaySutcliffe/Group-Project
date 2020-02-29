@@ -64,7 +64,7 @@ class TDAgent(Agent):
             steps += action.get_raw_steps()
 
         for s in steps: 
-            print(s)
+            print("Computer move from: " + str(s.start) + " to " + str(s.end))
             success = False
             while not success:
                 try:
@@ -97,8 +97,8 @@ class HumanAgent(Agent):
             new_board = deepcopy(game.board)
             new_board.apply_cv_update(cv_output)
             new_board_features = new_board.get_features(not self.player)
-            print(new_board.points)
-            print(new_board.bar)
+            # print(new_board.points)
+            # print(new_board.bar)
             if new_board_features in possible_moves:
                 return possible_moves[new_board_features]
             print("Invalid move. Please try again... ")
