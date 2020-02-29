@@ -15,15 +15,27 @@ torch.set_default_tensor_type('torch.DoubleTensor')
 
 class EvaluationModel(nn.Module):
 
-    def __init__(self, hidden_units, alpha, lamda, num_inputs=198):
+    def __init__(self, num_hidden_units,
+                 starting_alpha, starting_lamda,
+                 min_alpha, min_lamda,
+                 alpha_decay, lamda_decay,
+                 alpha_decay_interval, lamda_decay_interval,
+                 hidden_activation=nn.Sigmoid(), num_inputs=198):
+
         super(EvaluationModel, self).__init__()
-        self.alpha = alpha
-        self.lamda = lamda
+        self.starting_alpha = starting_alpha
+        self.starting_lamda = starting_lamda
+        self.min_alpha = min_alpha
+        self.min_lamda = min_lamda
+        self.alpha_decay = alpha_decay
+        self.lamda_decay = lamda_decay
+        self.alpha_decay_interval = alpha_decay_interval
+        self.lamda_decay_interval = lamda_decay_interval
         self.start_global_steps = 0
         self.start_episode = 0
 
-        self.hidden = nn.Sequential(nn.Linear(num_inputs, hidden_units), nn.Sigmoid())
-        self.output = nn.Sequential(nn.Linear(hidden_units, 1), nn.Sigmoid())
+        self.hidden = nn.Sequential(nn.Linear(num_inputs, num_hidden_units), hidden_activation)
+        self.output = nn.Sequential(nn.Linear(num_hidden_units, 1), nn.Sigmoid())
 
     def forward(self, x):
         x = torch.from_numpy(np.array(x))
@@ -31,24 +43,18 @@ class EvaluationModel(nn.Module):
         x = self.output(x)
         return x
 
-    def update_weights(self, p, p_next, eligibility_traces):
+    def update_weights(self, p, p_next, eligibility_trace):
         self.zero_grad()
         p.backward()
-
         with torch.no_grad():
+            for i, weights in enumerate(list(self.parameters())):
+                eligibility_trace[i] = self.starting_lamda * eligibility_trace[i] + weights.grad
+                updated_weights = weights + self.starting_alpha * (p_next - p) * eligibility_trace[i]
+                weights.copy_(updated_weights)
 
-            delta = p_next - p
-            parameters = list(self.parameters())
-
-            for i, weights in enumerate(parameters):
-                eligibility_traces[i] = self.lamda * eligibility_traces[i] + weights.grad
-                new_weights = weights + self.alpha * delta * eligibility_traces[i]
-                weights.copy_(new_weights)
-
-        return delta
-
-    def checkpoint(self, checkpoint_path, episode, global_steps, name_experiment):
-        path = checkpoint_path + "/{}_{}_{}.tar".format(name_experiment, datetime.datetime.now().strftime('%Y%m%d_%H%M_%S_%f'), episode + 1)
+    def checkpoint(self, checkpoint_path, episode, global_steps, name):
+        formatted_date = datetime.datetime.now().strftime('%Y%m%d_%H%M_%S_%f')
+        path = checkpoint_path + "/{}_{}_{}.tar".format(name, formatted_date, episode + 1)
         torch.save({'episode': episode + 1, 'global_steps': global_steps, 'model_state_dict': self.state_dict()}, path)
         print("\nCheckpoint saved: {}".format(path))
 
@@ -58,26 +64,26 @@ class EvaluationModel(nn.Module):
         self.start_global_steps = checkpoint['global_steps']
         self.load_state_dict(checkpoint['model_state_dict'])
 
-    def train_agent(self, n_episodes, save_path=None, save_step=0, name_experiment=''):
+    def train_agent(self, num_episodes, checkpoint_save_path=None, checkpoint_interval=0, name=''):
         start_episode = self.start_episode
-        n_episodes += start_episode
+        num_episodes += start_episode
 
         wins = [0, 0]
         agents = [TDAgent(0, self), TDAgent(1, self)]
 
-        durations = []
-        start_training = time.time()
-
         global_steps = self.start_global_steps
 
-        for episode in range(start_episode, n_episodes):
+        for episode in range(start_episode, num_episodes):
+            self.starting_lamda = max(self.min_lamda, self.starting_lamda * pow(self.lamda_decay,
+                                                                                global_steps / self.lamda_decay_interval))
+            self.starting_alpha = max(self.min_alpha, self.starting_alpha * pow(self.alpha_decay,
+                                                                                global_steps / self.alpha_decay_interval))
 
             eligibility_traces = [torch.zeros(weights.shape, requires_grad=False) for weights
                                   in list(self.parameters())]
             game = Game(agents)
             current_player = random.randint(0, 1)
             features = game.board.get_features(current_player)
-            t = time.time()
 
             for game_step in count():
 
@@ -96,29 +102,19 @@ class EvaluationModel(nn.Module):
             self.update_weights(self(features), float(winner), eligibility_traces)
 
             wins[winner] += 1
-            tot = sum(wins)
 
-            print(
-                "Game={:<6d} | Winner={} | after {:<4} plays || Wins: 0={:<6}({:<5.1f}%) | 1={:<6}({:<5.1f}%) | Duration={:<.3f} sec".format(
-                    episode + 1, winner, game_step,
-                    wins[0], (wins[0] / tot) * 100,
-                    wins[1], (wins[1] / tot) * 100,
-                    time.time() - t))
+            print("Episode: {}, Winner: {}, {} game steps; Wins: 0={}({}%) vs 1={}({}%)".format(
+                episode + 1, winner, game_step,
+                wins[0], (wins[0] / sum(wins)) * 100,
+                wins[1], (wins[1] / sum(wins)) * 100))
 
-            durations.append(time.time() - t)
             global_steps += game_step
-            self.lamda = max(0.7, 0.9*pow(0.96, global_steps/30000))
-            self.alpha = max(0.01, 0.1*pow(0.96, global_steps/40000))
 
-            if save_path and save_step > 0 and episode > 0 and (episode + 1) % save_step == 0:
-                self.checkpoint(checkpoint_path=save_path, episode=episode, global_steps=global_steps, name_experiment=name_experiment)
+            if checkpoint_save_path and checkpoint_interval > 0 and episode > 0 and (
+                    episode + 1) % checkpoint_interval == 0:
+                self.checkpoint(checkpoint_path=checkpoint_save_path, episode=episode, global_steps=global_steps,
+                                name=name)
 
-        print("\nAverage duration per game: {} seconds".format(round(sum(durations) / n_episodes, 3)))
-        print("Average game length: {} plays | Total Duration: {}".format(round(global_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
-
-        if save_path:
-            self.checkpoint(checkpoint_path=save_path, episode=n_episodes - 1, global_steps=global_steps, name_experiment=name_experiment)
-
-            with open('{}/comments.txt'.format(save_path), 'a') as file:
-                file.write("Average duration per game: {} seconds".format(round(sum(durations) / n_episodes, 3)))
-                file.write("\nAverage game length: {} plays | Total Duration: {}".format(round(global_steps / n_episodes, 2), datetime.timedelta(seconds=int(time.time() - start_training))))
+        if checkpoint_save_path:
+            self.checkpoint(checkpoint_path=checkpoint_save_path, episode=num_episodes - 1, global_steps=global_steps,
+                            name=name)
