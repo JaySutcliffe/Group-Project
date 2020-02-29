@@ -3,6 +3,7 @@ import vision
 from board import Board
 from agents import TDAgent, HumanAgent, Difficulty
 
+
 class Game:
 
     def __init__(self, agents):
@@ -125,10 +126,14 @@ class Game:
 
 if __name__ == "__main__":
     from evaluator import EvaluationModel
-    net = EvaluationModel(hidden_units=40, alpha=0.1, lamda=None)
-    net.load(checkpoint_path="./saved_models/exp4/exp1_20200221_1714_18_357821_188000.tar")
+    model = EvaluationModel(num_hidden_units=40,
+                          starting_alpha=0.1, starting_lamda=0.9,
+                          min_alpha=0.1, min_lamda=0.7,
+                          alpha_decay=1, lamda_decay=0.96,
+                          alpha_decay_interval=1, lamda_decay_interval=3e4)
+    model.load(checkpoint_path="./saved_models/exp4/exp1_20200221_1714_18_357821_188000.tar")
     v = vision.Vision()
-    td_agent = TDAgent(0, net, v)
+    td_agent = TDAgent(0, model, v)
     human_agent = HumanAgent(1, v)
     playing_agents = [td_agent, human_agent]
     game = Game(playing_agents)
