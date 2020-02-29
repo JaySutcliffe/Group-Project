@@ -68,7 +68,7 @@ class TDAgent(Agent):
             success = False
             while not success:
                 try:
-                    print(self.computer_vision.get_move(s))
+                    print(self.computer_vision.get_move(s) + "yo")
                     success = True
                 except:
                     input("Try again?... ")
