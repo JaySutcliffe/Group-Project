@@ -80,14 +80,16 @@ def arm_angle_to_beam_angles(r, phi):
 # Motor gearing is handled in the communications layer
 def transform(x, y, z):
     theta, r, z = arm_centric_to_arm_cylindrical(*board_to_arm_centric(x, y, z))
-    #cubic = (295.3898) + (-3.30652 * r) + (0.011514 * r**2) + (-1.39483e-5 * r**3)
-    cubic = (295.3898) + (-3.30652 * r) + (0.011514 * r**2) + (-1.39483e-5 * r**3)
-    shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
+    #z_adj = z + ((0.2385 * r) - 53.7303 )
+    z_adj = z + ((0.0006 * r**2) + (0.1 * r) - 45)
+    print("z: " + str(z))
+    print("z_adj: " + str(z_adj))
+    shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z_adj)))
     #shoulder_offset = (-0.05161 * r) + (0.00122 * z) + 4.35543
     #elbow_offset = (-0.02777 * r) + (-0.07052 * z) + 24.82531
     #shoulder_offset = math.radians(shoulder_offset)
     #elbow_offset = math.radians(elbow_offset)
-    print("Transform : (" + str(theta) + ", " + str(shoulder) + ", " + str(elbow) + ")")
+    print("Transform : (" + str(math.degrees(theta)) + ", " + str(math.degrees(shoulder)) + ", " + str(math.degrees(elbow)) + ")")
     print("r: " + str(r))
     #return theta, shoulder - shoulder_offset, elbow + elbow_offset
     return theta, shoulder, elbow
@@ -96,24 +98,24 @@ def transform(x, y, z):
 def relative_transform(x, y, z):
     theta, r, z = arm_centric_to_arm_cylindrical(x, y, z)
     shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
-    print("Relative Transform: (" + str(theta) + ", " + str(shoulder) + ", " + str(elbow) + ")")
+    print("Relative Transform: (" + str(math.degrees(theta)) + ", " + str(math.degrees(shoulder)) + ", " + str(math.degrees(elbow)) + ")")
     return theta, shoulder, elbow
 
 def coord_to_motor(x, y, z):
     theta, shoulder, elbow = transform(x, y, z)
     print(str(math.degrees(theta)) + " " + str(math.degrees(shoulder)) + " " + str(math.degrees(elbow)))
-    return int(7 * (math.degrees(theta) + 90)), int(66.68 * math.degrees(shoulder)), int(5 * math.degrees(elbow))
+    return int(21 * (math.degrees(theta))), int(66.68 * math.degrees(shoulder)), int(5 * math.degrees(elbow))
 
     
 
 def main():
-    print(np.multiply(transform(100,100,10),180/math.pi))
+    #print(np.multiply(transform(100,100,10),180/math.pi))
     s = Server(HOST, PORT)
     #theta, shoulder, elbow = coord_to_motor(0, 0 , 50)
     #s.send_pos('A', theta)
     #s.send_pos('C', elbow)
     #s.send_pos('B', shoulder)
-    #s.send_pos('D', 250)
+    #s.send_pos('D', 250)7
     
     angles = input()
     while angles != 'q':
@@ -122,16 +124,16 @@ def main():
         y = int(l[1])
         z = int(l[2])
         theta, shoulder, elbow = transform(x,y,z)
-        s.send_pos('A', int(7 * (math.degrees(theta) + 90)))
-        s.send_pos('B', int(66.68 * math.degrees(shoulder)))
+        s.send_pos('A', int(21 * (math.degrees(theta) + 180)))        
         s.send_pos('C', int(5 * math.degrees(elbow)))
+        s.send_pos('B', int(66.68 * math.degrees(shoulder)))
 
         angles = input()
     
     
-    s.send_pos('A', 90*7)
-    s.send_pos('B', int(66.68*90))
-    s.send_pos('C', 5*90)
+    s.send_pos('A', (180)*21)
+    s.send_pos('B', int(66.68*83))
+    s.send_pos('C', 5*83)
     s.send_pos('D', 0)
 
 
