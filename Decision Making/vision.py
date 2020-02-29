@@ -61,14 +61,16 @@ debug = True
 # https://www.pyimagesearch.com/2014/08/04/opencv-python-color-detection/ using to mask the image to only deal with parts of a certain colour.
 
 
-def debug_show(image):
+def debug_show(image, name = "Computer Vision"):
     if debug:
       cv2.imshow("Computer Vision", image)
       cv2.waitKey(0)
       cv2.destroyAllWindows()
+    else:
+      cv2.imwrite(name, image)
 
 
-def get_shapes(image, lower, upper, seperate = False):
+def get_shapes(image, lower, upper, seperate = False, name = ""):
     lower = np.array(lower, dtype = "uint8")
     upper = np.array(upper, dtype = "uint8")
     
@@ -79,7 +81,7 @@ def get_shapes(image, lower, upper, seperate = False):
     mask = cv2.inRange(hsv, lower, upper)
     image = cv2.bitwise_and(image, image, mask = mask)
     
-    debug_show(image)
+    debug_show(image, "Mask " + name)
     
     cnt = None
     
@@ -102,6 +104,8 @@ def get_shapes(image, lower, upper, seperate = False):
         # Finding unknown region
         sure_fg = np.uint8(sure_fg)
         # unknown = cv2.subtract(sure_bg,sure_fg)
+        
+        debug_show(image, "Split " + name)
         
         # We find the contours on the small circles calculated from the code
         cnts = cv2.findContours(sure_fg.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
@@ -149,7 +153,7 @@ def get_shapes(image, lower, upper, seperate = False):
         cv2.putText(image, "center", (x - 20, y - 20),
         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         
-    debug_show(image)
+    debug_show(image, "Centers " + name)
     
     return np.vstack((xs,ys))
 
@@ -195,12 +199,12 @@ def report_positions(image):
     height, width, channels = image.shape
 
     # Getting all of the black tokens
-    black = get_shapes(image, BLACK_COLOUR_LOWER, BLACK_COLOUR_HIGHER, True)
+    black = get_shapes(image, BLACK_COLOUR_LOWER, BLACK_COLOUR_HIGHER, True, "Black")
     black[0] = black[0] / width
     black[1] = black[1] / height
     
     # Getting all of the white tokens
-    white = get_shapes(image, WHITE_COLOUR_LOWER, WHITE_COLOUR_HIGHER, True)
+    white = get_shapes(image, WHITE_COLOUR_LOWER, WHITE_COLOUR_HIGHER, True, "White")
     white[0] = white[0] / width
     white[1] = white[1] / height
     
@@ -285,9 +289,6 @@ class MoveRegisteredError(VisionError):
     # Exception raised for multiple pieces being knocked off from one spike
     def __init__(self, message):
         self.message = message
-
-
-# In[284]:
 
 
 # TEST BOARDS
@@ -475,14 +476,13 @@ class Vision:
         if retrieved == False:
             raise CameraReadError("Error reading from webcam")
         
-        
-        
+                
         # Rotating the image
         height, width, channels = image.shape
         M = cv2.getRotationMatrix2D((width / 2, height / 2), BOARD_ANGLE, 1)
         image = cv2.warpAffine(image, M, (width, height))
         
-        debug_show(image)
+        debug_show(image, "Image taken")
         
         # Transforming the image to only include the board
         image = perspective_transform(image)
