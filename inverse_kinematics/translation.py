@@ -5,7 +5,7 @@ import numpy as np
 
 board_width = 220
 board_depth = 220
-arm_to_board = 200  
+arm_to_board = 210  
 
 
 STUD_LENGTH = 7.985
@@ -81,7 +81,7 @@ def arm_angle_to_beam_angles(r, phi):
 def transform(x, y, z):
     theta, r, z = arm_centric_to_arm_cylindrical(*board_to_arm_centric(x, y, z))
     #z_adj = z + ((0.2385 * r) - 53.7303 )
-    z_adj = z + ((0.0006 * r**2) + (0.1 * r) - 45)
+    z_adj = z + ((0.00047 * r**2) + (0.00 * r) - 10)
     print("z: " + str(z))
     print("z_adj: " + str(z_adj))
     shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z_adj)))
