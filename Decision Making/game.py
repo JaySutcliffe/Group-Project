@@ -93,10 +93,10 @@ if __name__ == "__main__":
     game = Game(playing_agents)
 
     starting_points = [
-        [0,0,0,0,2,3,0,3,0,0,0,0,6,0,0,0,0,0,0,0,0,1,0,0],
-        [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
+        [3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,3,3,2,2,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     ]
-    starting_bar = [0,0]
-    starting_roll = [6,4]
+    starting_bar = [0,2]
+    starting_roll = [3,1]
     starting_player = 1
     game.play_real_from_given_state(starting_points, starting_bar, playing_agents, starting_player, starting_roll)
