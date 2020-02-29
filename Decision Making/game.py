@@ -101,6 +101,17 @@ if __name__ == "__main__":
     human_agent = HumanAgent(1, v)
     playing_agents = [td_agent, human_agent]
     game = Game(playing_agents)
+<<<<<<< HEAD
+
+    starting_points = [
+        [3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,3,3,2,2,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    ]
+    starting_bar = [0,2]
+    starting_roll = [3,1]
+    starting_player = 1
+    game.play_real_from_given_state(starting_points, starting_bar, playing_agents, starting_player, starting_roll)
+=======
     set_start_state = True
     if set_start_state:
         starting_points = [
@@ -113,3 +124,4 @@ if __name__ == "__main__":
         game.play_real_from_given_state(starting_points, starting_bar, playing_agents, starting_player, starting_roll)
     else:
         game.play_real()
+>>>>>>> ed28920098d1bc65d9095417a2b913f1fd1fec63
