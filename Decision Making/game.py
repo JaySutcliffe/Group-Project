@@ -62,7 +62,10 @@ class Game:
         # print("\tSpikes array:" + str(game.board.points))
         # print("\tBar: " + str(game.board.bar))
         # print("\tOff: " + str(game.board.off))
-        print("Dice roll: " + str(roll1))
+        if (self.agents[current_player].name == "Human"):
+            print("You rolled a: " + str(roll1))
+        else:
+            print("The computer rolled a: " + str(roll1))
         self.next_turn(current_player, roll=roll1, pretty=True)
         while not self.winner():
             current_player = not current_player
@@ -73,9 +76,16 @@ class Game:
             # print("\tBar: " + str(game.board.bar))
             # print("\tOff: " + str(game.board.off))
             roll = self.roll_dice()
-            print("Dice roll: " + str(roll))
+            if (self.agents[current_player].name == "Human"):
+                print("You rolled a: " + str(roll))
+            else:
+                print("The computer rolled a: " + str(roll))
             self.next_turn(current_player, roll=roll, pretty=True)
-        print(self.winner()[1].name + " wins!")
+		
+        if (self.winner()[1].name == "Human"):
+            print("You win!")
+        else:
+            print(self.winner()[1].name + " wins!")
         return self.winner()
 
     @staticmethod
@@ -99,7 +109,7 @@ if __name__ == "__main__":
         ]
         starting_bar = [0,0]
         starting_roll = [6,4]
-        starting_player = 0
+        starting_player = 1
         game.play_real_from_given_state(starting_points, starting_bar, playing_agents, starting_player, starting_roll)
     else:
         game.play_real()
