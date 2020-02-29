@@ -3,7 +3,7 @@ import random
 import numpy as np
 import vision
 from copy import deepcopy
-from enum import Enum
+
 
 class Agent(ABC):
 
@@ -15,49 +15,30 @@ class Agent(ABC):
         pass
 
 
-class Difficulty(Enum):
-    EASY = 0,
-    MEDIUM = 1,
-    HARD = 2
-
-
 class TDAgent(Agent):
 
-    def __init__(self, player, model, computer_vision, difficulty=Difficulty.HARD):
+    def __init__(self, player, model, computer_vision):
         super().__init__(player)
         self.model = model
         self.name = "Computer"
         self.computer_vision = computer_vision
-        self.difficulty = difficulty
 
     def get_move(self, game, possible_moves):
         if not possible_moves:
             return None
 
-        if self.difficulty == Difficulty.HARD:
-            v_best = 0
-            f_best = None
-            for f in possible_moves:
-                v = self.model(f)[0].item()
-                v = 1. - v if self.player == 0 else v
-                if v > v_best:
-                    v_best = v
-                    f_best = f
-            best_move = possible_moves[f_best]
+        v_best = 0
+        m_best = None
 
-        else:
-            vf_list = []
-            for f in possible_moves:
-                v = self.model(f)[0].item()
-                v = 1. - v if self.player == 0 else v
-                vf_list.append((v, f))
-            vf_list.sort(key=lambda x: x[0])
-            if self.difficulty == Difficulty.EASY:
-                percentile = 0.5
-            elif self.difficulty == Difficulty.MEDIUM:
-                percentile = 0.75
-            index = int(len(vf_list)*percentile)
-            best_move = possible_moves[vf_list[index][1]]
+        for m in possible_moves:
+            v = self.model(m)[0].item()
+            v = 1. - v if self.player == 0 else v
+            if v > v_best:
+                v_best = v
+                m_best = m
+
+        best_move = possible_moves[m_best]
+
 
         steps = []
         for action in best_move:
