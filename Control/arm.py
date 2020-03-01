@@ -66,17 +66,25 @@ class Arm:
             to_x, to_y = to_coord
             self.collect_or_drop(to_x, to_y, pick_up=False)
 
-    # Move to off_board location and drop
+    '''
+        Move to off_board location and drop any held piece
+    '''
     def drop_piece(self):
         self.move_to(*OFF_POSITION,steps=2)
         self.retract_claw()
 
+    '''
+        Alias for easy use
+    '''
     def move_out_of_way(self):
         self.drop_piece()
 
-    # Carefully move to above piece, then slowly lower and pick up or deposit piece, then return to neutral
+    '''
+        Carefully move to above the piece, then slowly lower and pick up or deposit piece, then return to neutral
+    '''
     def collect_or_drop(self, x, y, pick_up):
-        self.move_to(*REST_POS)
+        if self.cart_pos != REST_POS:
+            self.move_to(*REST_POS, steps=2)
         self.move_to(x, y, 50 + PIECE_HEIGHT, steps=2)
         self.move_to(x, y, PIECE_HEIGHT, steps=3)
         self.move_claw(pick_up)
