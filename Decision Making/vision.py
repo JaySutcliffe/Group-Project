@@ -62,6 +62,9 @@ debug = False
 
 
 def debug_log(image, name = "Computer Vision"):
+    # Function to log images taken
+    # If debug is turned on windows will be opened
+    # displaying the camera image when playing
     if debug:
         cv2.imshow(name, image)
         cv2.waitKey(0)
