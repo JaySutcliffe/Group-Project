@@ -31,6 +31,7 @@ class TDAgent(Agent):
         self.computer_vision = computer_vision
         self.difficulty = difficulty
         self.robot_arm = Arm()
+        self.robot_arm.move_out_of_way()
 
     def get_move(self, game, possible_moves):
         if not possible_moves:
@@ -72,14 +73,25 @@ class TDAgent(Agent):
             success = False
             while not success:
                 try:
-                    result = self.computer_vision.get_move(s)
-                    self.robot_arm.move_piece(result)
-                    self.robot_arm.move_out_of_way()
-                    print(result)
-                    success = True
-                except:
+                  (x1,y1),c2 = self.computer_vision.get_move(s)
+                  x1 = 220-x1*220
+                  y1 = 220*y1
+                  result = None
+                  if c2=="OFF":
+                      result = ((x1,y1),c2)
+                  else:
+                      x2,y2 = c2
+                      x2 = 220-x2*220
+                      y2 = y2*220
+                      result = ((x1,y1),(x2,y2))
+                  
+                  self.robot_arm.move_piece(result)
+                  self.robot_arm.move_out_of_way()
+                  print(result)
+                  success = True
+                except Exception as e:
                     input("Piece detection problem: Take image again... ")
-
+                    
         return best_move
 
 
