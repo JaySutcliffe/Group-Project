@@ -69,6 +69,9 @@ class Arm:
         self.move_to(*OFF_POSITION)
         self.retract_claw()
 
+    def move_out_of_way(self):
+        self.drop_piece()
+
     # Carefully move to above piece, then slowly lower and pick up or deposit piece, then return to neutral
     def collect_or_drop(self, x, y, pick_up):
         self.move_to(x, y, 50 + PIECE_HEIGHT, steps=3)
