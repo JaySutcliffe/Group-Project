@@ -1,0 +1,8 @@
+Human's turn
+Board state:
+Spikes white: [2, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+Spikes black: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+Bar white: 0
+Bar black: 0
+Off white: 7
+Off black: 14

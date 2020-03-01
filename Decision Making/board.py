@@ -128,8 +128,8 @@ class Board:
         return np.array(pos)
 
     def apply_cv_update(self, cv_output):
-        bar_white = cv_output[0]
-        bar_black = cv_output[1]
+        bar_white = cv_output[1]
+        bar_black = cv_output[0]
         add = cv_output[2]
         sub = cv_output[3]
 
@@ -142,7 +142,7 @@ class Board:
             player = 0 if colour == "W" else 1
             amount = change[1]
             spike = change[2]
-            spike = spike if player == 0 else 23-spike
+            spike = spike if player == 1 else 23-spike
             self.points[player][spike] += amount
 
         self.off = [15-sum(self.points[0])-self.bar[0],

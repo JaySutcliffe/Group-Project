@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 import random
 import numpy as np
+import vision
 from copy import deepcopy
-
+from enum import Enum
 
 class Agent(ABC):
 
@@ -14,62 +15,93 @@ class Agent(ABC):
         pass
 
 
+class Difficulty(Enum):
+    EASY = 0,
+    MEDIUM = 1,
+    HARD = 2
+
+
 class TDAgent(Agent):
 
-    def __init__(self, player, model):
+    def __init__(self, player, model, computer_vision, difficulty=Difficulty.HARD):
         super().__init__(player)
         self.model = model
         self.name = "Computer"
+        self.computer_vision = computer_vision
+        self.difficulty = difficulty
 
     def get_move(self, game, possible_moves):
         if not possible_moves:
             return None
 
-        v_best = 0
-        m_best = None
+        if self.difficulty == Difficulty.HARD:
+            v_best = 0
+            f_best = None
+            for f in possible_moves:
+                v = self.model(f)[0].item()
+                v = 1. - v if self.player == 0 else v
+                if v > v_best:
+                    v_best = v
+                    f_best = f
+            best_move = possible_moves[f_best]
 
-        for m in possible_moves:
-            v = self.model(m)[0].item()
-            v = 1. - v if self.player == 0 else v
-            if v > v_best:
-                v_best = v
-                m_best = m
-
-        best_move = possible_moves[m_best]
-
+        else:
+            vf_list = []
+            for f in possible_moves:
+                v = self.model(f)[0].item()
+                v = 1. - v if self.player == 0 else v
+                vf_list.append((v, f))
+            vf_list.sort(key=lambda x: x[0])
+            if self.difficulty == Difficulty.EASY:
+                percentile = 0.5
+            elif self.difficulty == Difficulty.MEDIUM:
+                percentile = 0.75
+            index = int(len(vf_list)*percentile)
+            best_move = possible_moves[vf_list[index][1]]
 
         steps = []
         for action in best_move:
             steps += action.get_raw_steps()
-        """
-        Computer Vision / Robotics: Give steps to robot
-        """
 
+        for s in steps: 
+            print("Computer move from: " + str(s.start) + " to " + str(s.end))
+            success = False
+            while not success:
+                try:
+                    print(self.computer_vision.get_move(s))
+                    success = True
+                except:
+                    input("Try again?... ")
+            input("Move piece... ")
 
         return best_move
 
 
 class HumanAgent(Agent):
 
-    def __init__(self, player):
+    def __init__(self, player, computer_vision):
         super().__init__(player)
         self.name = "Human"
+        self.computer_vision = computer_vision
 
     def get_move(self, game, possible_moves):
-        while True:
-            input("Please type anything once you've played your move.")
+        if len(possible_moves) == 0:
+          print("No moves possible")
+          return None
 
-            """
-            Computer Vision: Determine what the move was
-            """
-            cv_output = None
+        while True:
+            # input("Please type anything once you've played your move.")
+
+            cv_output = self.computer_vision.take_turn()
 
             new_board = deepcopy(game.board)
             new_board.apply_cv_update(cv_output)
             new_board_features = new_board.get_features(not self.player)
+            # print(new_board.points)
+            # print(new_board.bar)
             if new_board_features in possible_moves:
                 return possible_moves[new_board_features]
-            print("Invalid move. Please try again.")
+            print("Invalid move. Please try again... ")
 
 
 class PubevalAgent(Agent):
