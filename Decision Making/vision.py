@@ -73,12 +73,13 @@ def debug_log(image, name = "Computer Vision"):
 
 
 def get_shapes(image, lower, upper, seperate = False, name = ""):
+    # Function that outputs a matrix row of xs followed by ys
+    # representing the centre of each detected piece
+    
     lower = np.array(lower, dtype = "uint8")
     upper = np.array(upper, dtype = "uint8")
     
-    # Our image is already white on black, but we apply grayscale
-    # again, blur the image for better detection and then apply
-    # a threshold.
+    # Applying a colour mask to only get shapes in a colour range
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, lower, upper)
     image = cv2.bitwise_and(image, image, mask = mask)
@@ -87,6 +88,7 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
     
     cnt = None
     
+    # Graying, blurring the image and applying a threshold
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     thresh = cv2.threshold(blurred, 60, 255, cv2.THRESH_OTSU)[1]
@@ -116,17 +118,14 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
         # on a copy of the threshold
         cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
         
-        
-    # find the colors within the specified boundaries and apply the mask
-    
-    # Each element has the form (x,y,area)
+      
+    # Each element has the form (x,y)
     xs = [];
     ys = [];
-    areas = []; 
     
     # Contours are a curve that joins all the continous points
-    # around an object with a specific colour intensity.
-    # in openCV this is finding white objects on a black background.
+    # around an object with a specific colour intensity
+    # in openCV this is finding white objects on a black background
     cnts = imutils.grab_contours(cnts)
     
     
@@ -135,14 +134,15 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
         # Compute the center of the contour
         M = cv2.moments(c) # Weighted average of pixel intensities
     
+        
+        # Small amount of the colour picked up, ignore as no area so
+        # will not be a token
+        if M["m00"] <= 0: continue
+        
         # Computing the coordinates of the centre of each token.
         # Coordinates are relative to the image.
         # So they are on a 1200 by 720 grid.
     
-        # Small amount of the colour picked up, ignore as no area so
-        # will not be a token.
-        if M["m00"] <= 0: continue
-        
         xs.append(M["m10"] / M["m00"])
         ys.append(M["m01"] / M["m00"])
         
@@ -163,7 +163,8 @@ def get_shapes(image, lower, upper, seperate = False, name = ""):
 
 
 def perspective_transform(image):
-    
+    # Applying a perspective transformation producing a new image
+    # of just the board
     pts = np.transpose(get_shapes(image, BORDER_COLOUR_LOWER, BORDER_COLOUR_HIGHER, False, "Border"))
     rect = np.zeros((4, 2), dtype = "float32")
 
@@ -196,6 +197,8 @@ def perspective_transform(image):
     
 
 def report_positions(image):
+    # Takes in an image and will produce a physical board representation
+
     # Getting the dimensions so the image coordinates
     # can be mapped to a 1 x 1 grid
     height, width, channels = image.shape
@@ -215,7 +218,7 @@ def report_positions(image):
     white = np.vstack((white, np.array([0] * white.shape[1])))
     tokens = np.hstack((black, white))
     
-    # Creating bins dividing the the grid into spikes, 
+    # Creating bins dividing the grid into spikes 
     x_inds = np.digitize(tokens[0], SPIKE_WIDTH * np.arange(1,13))
     y_inds = np.digitize(tokens[1], [SPIKE_HEIGHT, SPIKE_HEIGHT + MIDDLE_HEIGHT])
     
@@ -223,7 +226,8 @@ def report_positions(image):
     bar_black = []
     bar_white = []
     board = [[]] * 24
-
+    
+    # Iterating over each token and adding it to the board representation
     for i in range(0,tokens.shape[1]):
         s = tokens[:,i]
         x = x_inds[i]
@@ -249,12 +253,14 @@ def report_positions(image):
 
 
 def count_colours(spike):
-    # Dealing with floating points so do not want to do ==
-    spike = spike
+    # Takes in the tokens on a spike generating a pair which
+    # is an abstract representation
+
     # Counting the number of tokens labelled black and the number labelled white
     colours = np.array([spike[i][2] for i in range(0,len(spike))])
     black_count = sum(np.where(colours > 0.95, 1, 0))
     white_count = sum(np.where(colours < 0.01, 1, 0))
+    
     # Returning a pair to indicate the colour and count
     if black_count == 0:
         if white_count == 0:
@@ -270,6 +276,7 @@ def count_colours(spike):
 
 
 def abstract_board(board):
+    # Returns an abstract representation of a physical board
     return [count_colours(spike) for spike in board]
 
 
@@ -278,7 +285,7 @@ class VisionError(Exception):
     pass
 
 class CameraReadError(VisionError):
-    # Exception raised for error reading from the camera.
+    # Exception raised for error reading from the camera
     def __init__(self, message):
         self.message = message
 
@@ -324,27 +331,32 @@ def compare_boards(old_board, new_board):
     # I seperated this from the Vision class so I can test it
     # seperately from the camera.
     
-    
+    # Returned is two lists that represent the changes to the board
+    # Elements have the form (colour, number moved, index)
+        
     # Lists to store if the pieces have been added
-    # or removed from a spike.
+    # or removed from a spike
     add = []
     sub = []
     
     for i in range(0,24):
-        # If there is multiple pieces of the same spike.
+        # If there is multiple pieces of the same spike
         if new_board[i][0] == "E":
             raise MoveRegisteredError("Different types on the same spike (" + str(i) + ")")
         
-        # If statements to update the add and sub arrays.
+        # If statements to update the add and sub arrays
         if new_board[i][0] != old_board[i][0]:
             if old_board[i][1] == 1 or new_board[i][0] == "N":
+                # A piece has been knocked off
                 sub = sub + [(old_board[i][0], old_board[i][1], i)] 
             elif old_board[i][1] > 1:
-                # Does some additional move checking to make sure a spike has not completely chaged.
+                # Does some additional move checking to make sure a spike has not completely changed
                 raise MoveRegisteredError("Multiple pieces knocked off from the same spike " + str(i))
             if new_board[i][1] > 0:
+                # Adding pieces to the spike
                 add = add + [(new_board[i][0], new_board[i][1], i)]
         elif new_board[i][0] != "N":
+            # Working out the difference and adding/subbing
             diff = new_board[i][1] - old_board[i][1]
             if diff > 0:
                 add = add + [(new_board[i][0], diff, i)]
@@ -355,8 +367,8 @@ def compare_boards(old_board, new_board):
 
 
 
-# Small test module used when not testing with actual images.
 def test_compare():
+    # Small test module used when not testing with actual images
     add, sub = compare_boards(test_board1,test_board2)
     assert(add == [("W", 1, 1)])
     assert(sub == [("W", 1, 0)])
@@ -393,6 +405,8 @@ class Vision:
         
         
     def get_move(self, dm_move):
+        # Getting the decision making move and translating it into 
+        # a pair of arm coordinates
         player, start, end = dm_move
         
         self.update_board()
@@ -471,6 +485,8 @@ class Vision:
         
         
     def update_board(self):
+        # Updating the board states from the image taken from the camera
+    
         # Capturing the image from a camera
         cam = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         retrieved, image = cam.read()
@@ -505,6 +521,7 @@ class Vision:
         
         
     def test_play(self):
+        # Function for testing if the neural networks translation is ok
         while input("Capture image before move...  (q and enter to quit)") != "q":
             try:
                 self.update_board()
@@ -536,6 +553,7 @@ class Vision:
 
     
 def test_get_move():
+    # Testing function for the dm_move to arm coordinates
     v = Vision()
     v.update_board()
     print("WHITE OUT -> 12")
