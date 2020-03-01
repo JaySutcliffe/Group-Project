@@ -66,7 +66,7 @@ class Arm:
 
     # Move to off_board location and drop
     def drop_piece(self):
-        self.move_to(*OFF_POSITION)
+        self.move_to(*OFF_POSITION,steps=2)
         self.retract_claw()
 
     def move_out_of_way(self):
