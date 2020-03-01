@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import random
 import numpy as np
 import vision
+from arm import Arm
 from copy import deepcopy
 from enum import Enum
 
@@ -29,6 +30,7 @@ class TDAgent(Agent):
         self.name = "Computer"
         self.computer_vision = computer_vision
         self.difficulty = difficulty
+        self.robot_arm = Arm()
 
     def get_move(self, game, possible_moves):
         if not possible_moves:
@@ -64,15 +66,19 @@ class TDAgent(Agent):
             steps += action.get_raw_steps()
 
         for s in steps: 
+            # Printing the computers move
             print("Computer move from: " + str(s.start) + " to " + str(s.end))
+            # Taking an image with the camera, request
             success = False
             while not success:
                 try:
-                    print(self.computer_vision.get_move(s))
+                    result = self.computer_vision.get_move(s)
+                    self.robot_arm.move_piece(result)
+                    self.robot_arm.move_out_of_way()
+                    print(result)
                     success = True
                 except:
-                    input("Try again?... ")
-            input("Move piece... ")
+                    input("Piece detection problem: Take image again... ")
 
         return best_move
 
