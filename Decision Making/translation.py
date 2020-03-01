@@ -3,6 +3,8 @@ import time
 from s import *
 import numpy as np
 
+
+#Lengths in mm
 board_width = 220
 board_depth = 220
 arm_to_board = 210
@@ -17,8 +19,6 @@ elbow_length = math.sqrt(elbow_across_length ** 2 + elbow_down_length ** 2
 elbow_angle = math.acos(
     (elbow_down_length ** 2 + elbow_length ** 2 - elbow_across_length ** 2) / (2 * elbow_down_length * elbow_length))
 
-# elbow_base_angle = math.acos((2*(8*STUD_LENGTH)**2)/(2*8*STUD_LENGTH*math.sqrt((8*STUD_LENGTH)**2+(4*STUD_LENGTH)**2)))
-# elbow_angle_from_horiz = math.acos((-elbow_down_length**2+elbow_across_length**2+elbow_length**2)/(2*elbow_across_length*elbow_length))
 shoulder_length = 25 * STUD_LENGTH
 
 horizontal_arm_offset = 0 * STUD_LENGTH
@@ -67,7 +67,6 @@ def arm_coordinates_to_angle(r, z):
 # Find angles of shoulder and elbow beams in order to satisfy specified distance and angle
 # Motor angles measured from 0 is in front of the arm
 def arm_angle_to_beam_angles(r, phi):
-    print('r,shoulder,elbow',r,shoulder_length,elbow_length)
     # alpha = a_shoulder-phi
     alpha = math.acos((shoulder_length ** 2 + r ** 2 - elbow_length ** 2) /
                       (2 * shoulder_length * r))
@@ -86,45 +85,36 @@ def arm_angle_to_beam_angles(r, phi):
 def transform(x, y, z):
     print(x, y, z)
     theta, r, z = arm_centric_to_arm_cylindrical(*board_to_arm_centric(x, y, z))
-    # z_adj = z + ((0.2385 * r) - 53.7303 )
-    # z_adj = z + ((0.00047 * r ** 2) + (0.00 * r) - 10)
-    # print("z: " + str(z))
-    # print("z_adj: " + str(z_adj))
-    shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
-    # shoulder_offset = (-0.05161 * r) + (0.00122 * z) + 4.35543
-    # elbow_offset = (-0.02777 * r) + (-0.07052 * z) + 24.82531
-    # shoulder_offset = math.radians(shoulder_offset)
-    # elbow_offset = math.radians(elbow_offset)
-    print("Transform : (" + str(math.degrees(theta)) + ", " + str(math.degrees(shoulder)) + ", " + str(
-        math.degrees(elbow)) + ")")
-    print("r: " + str(r))
+
+    z_adj = z + ((0.00047 * r ** 2) + (0.00 * r) - 10)
+
+    r_adj = -276 + (2.61 * r) + (-2.26e-3 * r**2)
+    
+    theta_adj = theta * 1.17
+    
+    #Adjustments made to counteract systematic errors in the hardware - calculated by collecting measurements and hand tuning
+    
+    shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r_adj, z_adj)))
+    
     # return theta, shoulder - shoulder_offset, elbow + elbow_offset
-    return theta, shoulder, elbow
+    return theta_adj, shoulder, elbow
 
 
 def relative_transform(x, y, z):
     theta, r, z = arm_centric_to_arm_cylindrical(x, y, z)
     shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r, z)))
-    print("Relative Transform: (" + str(math.degrees(theta)) + ", " + str(math.degrees(shoulder)) + ", " + str(
-        math.degrees(elbow)) + ")")
     return theta, shoulder, elbow
 
 
 def coord_to_motor(x, y, z):
     theta, shoulder, elbow = transform(x, y, z)
-    print(str(math.degrees(theta)) + " " + str(math.degrees(shoulder)) + " " + str(math.degrees(elbow)))
     return int(21 * (math.degrees(theta))), int(66.68 * math.degrees(shoulder)), int(5 * math.degrees(elbow))
 
 
 def main():
-    # print(np.multiply(transform(100,100,10),180/math.pi))
     s = Server(HOST, PORT)
-    # theta, shoulder, elbow = coord_to_motor(0, 0 , 50)
-    # s.send_pos('A', theta)
-    # s.send_pos('C', elbow)
-    # s.send_pos('B', shoulder)
-    # s.send_pos('D', 250)7
 
+    # Takes command line input for x, y, z coordinates
     angles = input()
     while angles != 'q':
         l = angles.split(",")
@@ -137,7 +127,8 @@ def main():
         s.send_pos('B', int(66.68 * math.degrees(shoulder)))
 
         angles = input()
-
+    
+    # Returns arm to initial position
     s.send_pos('A', (180) * 21)
     s.send_pos('B', int(66.68 * 83))
     s.send_pos('C', 5 * 83)

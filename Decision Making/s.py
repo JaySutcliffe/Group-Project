@@ -3,8 +3,8 @@ import time
 
 #run on pi
 
-#HOST = '10.42.0.1'  #USB interface to EV3
-HOST = '192.168.137.1'
+HOST = '10.42.0.1'  #USB interface to EV3
+#HOST = '192.168.137.1'
 #HOST = 'localhost'
 PORT = 65432
 
