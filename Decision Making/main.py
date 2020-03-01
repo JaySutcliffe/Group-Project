@@ -1,46 +1,85 @@
-import argparse
-import utils
+import os
+from agents import TDAgent, RandomAgent, PubevalAgent
+from evaluator import EvaluationModel
+from game import Game
+from torch import nn
 
 
-def formatter(prog):
-    return argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=100, width=180)
+def train(name='',
+          num_episodes=100000,
+          checkpoint_path='', checkpoint_interval=1000,
+          hidden_layers=(40,),
+          starting_alpha=0.1, starting_lamda=0.9,
+          min_alpha=0.1, min_lamda=0.7,
+          alpha_decay=1, lamda_decay=0.96,
+          alpha_decay_interval=1, lamda_decay_interval=3e4,
+          hidden_activation=nn.Sigmoid(), num_inputs=198,
+          existing_model_path=''):
+    model = EvaluationModel(hidden_layers=hidden_layers,
+                            starting_alpha=starting_alpha, starting_lamda=starting_lamda,
+                            min_alpha=min_alpha, min_lamda=min_lamda,
+                            alpha_decay=alpha_decay, lamda_decay=lamda_decay,
+                            alpha_decay_interval=alpha_decay_interval, lamda_decay_interval=lamda_decay_interval,
+                            hidden_activation=hidden_activation, num_inputs=num_inputs)
 
-"""
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='TD-Gammon', formatter_class=lambda prog: formatter(prog))
-    subparsers = parser.add_subparsers(help='Train TD-Network | Evaluate Agent(s) | Plot Wins')
+    if existing_model_path:
+        model.load(checkpoint_path=existing_model_path)
 
-    parser_train = subparsers.add_parser('train', help='Train TD-Network', formatter_class=lambda prog: formatter(prog))
-    parser_train.add_argument('--save_path', help='Save directory location', type=str, default=None)
-    parser_train.add_argument('--save_step', help='Save the model every n episodes/games', type=int, default=0)
-    parser_train.add_argument('--episodes', help='Number of episodes/games', type=int, default=200000)
-    parser_train.add_argument('--alpha', help='Learning rate', type=float, default=0.1)
-    parser_train.add_argument('--hidden_units', help='Hidden units', type=int, default=40)
-    parser_train.add_argument('--lamda', help='Credit assignment parameter', type=float, default=0.9)
-    parser_train.add_argument('--model', help='Directory location to the model to be restored', type=str, default=None)
-    parser_train.add_argument('--name', help='Name of the experiment', type=str, default='exp1')
-    parser_train.add_argument('--seed', help='Seed used to reproduce results', type=int, default=0)
+    model.train_agent(num_episodes=num_episodes, checkpoint_save_path=checkpoint_path,
+                      checkpoint_interval=checkpoint_interval, name=name)
 
-    parser_train.set_defaults(func=utils.args_train)
 
-    parser_evaluate = subparsers.add_parser('evaluate', help='Evaluate Agent(s)', formatter_class=lambda prog: formatter(prog))
-    parser_evaluate.add_argument('--model_agent0', help='Saved model used by the agent0 (WHITE)', required=True, type=str)
-    parser_evaluate.add_argument('--model_agent1', help='Saved model used by the agent1 (BLACK)', required=False, type=str)
-    parser_evaluate.add_argument('--hidden_units_agent0', help='Hidden Units of the model used by the agent0 (WHITE)', required=False, type=int, default=40)
-    parser_evaluate.add_argument('--hidden_units_agent1', help='Hidden Units of the model used by the agent1 (BLACK)', required=False, type=int, default=40)
-    parser_evaluate.add_argument('--episodes', help='Number of episodes/games', default=20, required=False, type=int)
+def evaluate(existing_model_path,
+             num_episodes=100000,
+             hidden_layers=(40,),
+             starting_alpha=0.1, starting_lamda=0.9,
+             min_alpha=0.1, min_lamda=0.7,
+             alpha_decay=1, lamda_decay=0.96,
+             alpha_decay_interval=1, lamda_decay_interval=3e4,
+             hidden_activation=nn.Sigmoid(), num_inputs=198,
+             opponent="pubeval"):
 
-    parser_evaluate.set_defaults(func=utils.args_evaluate)
+    model = EvaluationModel(hidden_layers=hidden_layers,
+                            starting_alpha=starting_alpha, starting_lamda=starting_lamda,
+                            min_alpha=min_alpha, min_lamda=min_lamda,
+                            alpha_decay=alpha_decay, lamda_decay=lamda_decay,
+                            alpha_decay_interval=alpha_decay_interval, lamda_decay_interval=lamda_decay_interval,
+                            hidden_activation=hidden_activation, num_inputs=num_inputs)
 
-    parser_plot = subparsers.add_parser('plot', help='Plot the performance (wins)', formatter_class=lambda prog: formatter(prog))
-    parser_plot.add_argument('--save_path', help='Directory where the model are saved', type=str, required=True)
-    parser_plot.add_argument('--hidden_units', help='Hidden units of the model(s) loaded', type=int, default=40)
-    parser_plot.add_argument('--episodes', help='Number of episodes/games against a single opponent', default=20, type=int)
-    parser_plot.add_argument('--opponent', help='Opponent(s) agent(s) (delimited by comma) - "random" and/or "gnubg"', default='random', type=str)
-    parser_plot.add_argument('--dst', help='Save directory location', type=str, default='myexp')
+    model.load(checkpoint_path=existing_model_path)
 
-    parser_plot.set_defaults(func=utils.args_plot)
+    if opponent == "pubeval":
+        opponent_agent = PubevalAgent(0)
+    else:
+        opponent_agent = RandomAgent(0)
+    agents = [opponent_agent, TDAgent(1, model)]
+    wins = [0, 0]
+    for i in range(num_episodes):
+        game = Game(agents)
+        wins[game.play()[0]] += 1
 
-    args = parser.parse_args()
-    args.func(args)
-"""
+    print("\n{}: \t{}".format(existing_model_path, float(wins[1]) / float(sum(wins))))
+
+
+def evaluate_dir(dir_path,
+                 num_episodes=100000,
+                 hidden_layers=(40,),
+                 starting_alpha=0.1, starting_lamda=0.9,
+                 min_alpha=0.1, min_lamda=0.7,
+                 alpha_decay=1, lamda_decay=0.96,
+                 alpha_decay_interval=1, lamda_decay_interval=3e4,
+                 hidden_activation=nn.Sigmoid(), num_inputs=198,
+                 opponent="pubeval"):
+
+    for root, dirs, files in os.walk(dir_path):
+        for file in sorted(files):
+            if ".tar" in file:
+                evaluate(os.path.join(root, file),
+                         num_episodes=num_episodes,
+                         hidden_layers=hidden_layers,
+                         starting_alpha=starting_alpha, starting_lamda=starting_lamda,
+                         min_alpha=min_alpha, min_lamda=min_lamda,
+                         alpha_decay=alpha_decay, lamda_decay=lamda_decay,
+                         alpha_decay_interval=alpha_decay_interval, lamda_decay_interval=lamda_decay_interval,
+                         hidden_activation=hidden_activation, num_inputs=num_inputs,
+                         opponent=opponent)

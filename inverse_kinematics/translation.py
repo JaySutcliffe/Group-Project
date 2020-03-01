@@ -22,9 +22,9 @@ elbow_angle = math.acos((elbow_down_length**2+elbow_length**2-elbow_across_lengt
 shoulder_length = 25 * STUD_LENGTH
 
 horizontal_arm_offset = 0 * STUD_LENGTH
-base_height_offset = 7 * STUD_LENGTH
-claw_height_offset = 2 * STUD_LENGTH + STUD_LENGTH/2
-claw_length_offset = 10 * STUD_LENGTH
+base_height_offset = 6 * STUD_LENGTH
+claw_height_offset = 2 * STUD_LENGTH 
+claw_length_offset = 11 * STUD_LENGTH
 
 
 # Original coordinate system uses corner of board close right to arm as (0,0,0)
