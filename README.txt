@@ -9,7 +9,7 @@ must all be installed on the device.
 
 File to run:
 The file to be run is ‘game.py’. After difficulty is selected, the program is blocked until ‘c_linux.py’ 
-is selected to run on the EV3.
+is selected to run on the EV3 (or 'c_windows.py' for Windows).
 
 How to play:
 The player is always assigned to play as the colour black and the computer white. 
