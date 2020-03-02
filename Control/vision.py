@@ -5,7 +5,6 @@
 # 
 # https://jakevdp.github.io/blog/2017/12/05/installing-python-packages-from-jupyter/ for downloading packages in Notebook.
 
-# In[275]:
 
 
 # Install a pip package in the current Jupyter kernel
@@ -15,7 +14,6 @@
 # !{sys.executable} -m pip install --upgrade keyboard
 
 
-# In[276]:
 
 
 import cv2
@@ -23,7 +21,6 @@ import cv2
 import imutils
 import numpy as np
 
-# In[277]:
 
 
 # CONSTANTS
@@ -375,7 +372,6 @@ def test_compare():
     assert (sorted(sub) == sorted([("W", 3, 18), ("B", 2, 23)]))
 
 
-# In[287]:
 
 
 class Vision:
