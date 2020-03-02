@@ -8,7 +8,7 @@ or by checking the log files produced when running. Pytorch, openCV (cv2), numpy
 must all be installed on the device.
 
 File to run:
-The file to be run is ‘game.py’. After difficulty is selected, the program is blocked until ‘c.py’ 
+The file to be run is ‘game.py’. After difficulty is selected, the program is blocked until ‘c_linux.py’ 
 is selected to run on the EV3.
 
 How to play:
