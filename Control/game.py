@@ -16,6 +16,7 @@ class Game:
         
         :param agents: List of two Agents. agents[0] plays as WHITE, agents[1] plays as BLACK.
         """
+
         self.board = Board()
         self.agents = agents
 
@@ -146,13 +147,16 @@ if __name__ == "__main__":
     model.load(checkpoint_path="./stored_models/final/final_20200302_0326_50_865023_728001.tar")
 
     difficulty_input = ""
-    while difficulty_input not in ["E", "M", "H"]:
-        difficulty_input= input("Select difficulty level: EASY (E), MEDIUM (M), HARD (H)")
-        if difficulty_input == "E":
+    easy_inputs = {"e", "easy"}
+    medium_inputs = {"m", "med", "medium"}
+    hard_inputs = {"h", "hard"}
+    while difficulty_input not in easy_inputs.union(medium_inputs).union(hard_inputs):
+        difficulty_input = input("Select difficulty level: EASY (E), MEDIUM (M), HARD (H)").lower()
+        if difficulty_input in easy_inputs:
             difficulty = Difficulty.EASY
-        elif difficulty_input == "M":
+        elif difficulty_input in medium_inputs:
             difficulty = Difficulty.MEDIUM
-        elif difficulty_input == "H":
+        elif difficulty_input in hard_inputs:
             difficulty = Difficulty.HARD
 
     v = vision.Vision()
