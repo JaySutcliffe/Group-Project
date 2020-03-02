@@ -1,7 +1,8 @@
+import math
+import time
+
 import s
 import translation as t
-import time
-import math
 
 # Speeds of the motors
 LARGE_MAX_SPEED = 100

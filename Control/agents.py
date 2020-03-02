@@ -1,18 +1,33 @@
 from abc import ABC, abstractmethod
 import random
 import numpy as np
-import vision
 from arm import Arm
 from copy import deepcopy
 from enum import Enum
+from board import WHITE, BLACK
 
 class Agent(ABC):
+    """
+    Abstract base class for agents.
+    """
 
     def __init__(self, player):
+        """
+            
+        :param player: WHITE (0) or BLACK (1)
+        """
         self.player = player
 
     @abstractmethod
     def get_move(self, game, possible_moves):
+        """
+        Given a game state and a dict of features mapping to possible moves (see Board.get_possible_moves), select a 
+        move.
+        
+        :param game: Game object. 
+        :param possible_moves: List of tuples of Actions.
+        :return: Tuple of Actions.
+        """
         pass
 
 
@@ -23,79 +38,107 @@ class Difficulty(Enum):
 
 
 class TDAgent(Agent):
+    """
+    Agent that uses an EvaluationModel to help select its moves.
+    """
 
-    def __init__(self, player, model, computer_vision, difficulty=Difficulty.HARD):
+    def __init__(self, player, model, computer_vision=None, difficulty=Difficulty.HARD):
+        """
+        
+        :param player: See Agent class.
+        :param model: EvaluationModel object.
+        :param computer_vision: Vision object. Leave as None if using TDAgent for training/evaluating.
+        :param difficulty: Difficulty enum.
+        """
         super().__init__(player)
         self.model = model
         self.name = "Computer"
-        self.computer_vision = computer_vision
         self.difficulty = difficulty
-        self.robot_arm = Arm()
-        self.robot_arm.move_out_of_way()
+
+        self.computer_vision = computer_vision
+        if self.computer_vision:
+            self.robot_arm = Arm()
+            self.robot_arm.move_out_of_way()
 
     def get_move(self, game, possible_moves):
         if not possible_moves:
             return None
 
         if self.difficulty == Difficulty.HARD:
-            v_best = 0
-            f_best = None
-            for f in possible_moves:
-                v = self.model(f)[0].item()
-                v = 1. - v if self.player == 0 else v
-                if v > v_best:
-                    v_best = v
-                    f_best = f
-            best_move = possible_moves[f_best]
+            # Return the best move possible.
+
+            p_best = 0
+            features_best = None
+            for features in possible_moves:
+                # p is the likelihood of BLACK winning given a game state.
+                # The features are from the perspective of opponent.
+                # We want to minimise the likelihood of the opponent winning.
+                # If this agent is WHITE, then the opponent is BLACK so want to minimise p.
+                # If this agent is BLACK, then the opponent is WHITE so want to maximise p.
+
+                p = self.model(features)[0].item()
+                p = 1. - p if self.player == WHITE else p
+                if p > p_best:
+                    p_best = p
+                    features_best = features
+
+            best_move = possible_moves[features_best]
 
         else:
-            vf_list = []
-            for f in possible_moves:
-                v = self.model(f)[0].item()
-                v = 1. - v if self.player == 0 else v
-                vf_list.append((v, f))
-            vf_list.sort(key=lambda x: x[0])
+            # Return the 75th or 50th percentile move if MEDIUM difficulty or EASY difficult respectively.
+
+            p_features_list = []
+            for features in possible_moves:
+                p = self.model(features)[0].item()
+                p = 1. - p if self.player == WHITE else p
+                p_features_list.append((p, features))
+            p_features_list.sort(key=lambda x: x[0])
             if self.difficulty == Difficulty.EASY:
                 percentile = 0.5
             elif self.difficulty == Difficulty.MEDIUM:
                 percentile = 0.75
-            index = int(len(vf_list)*percentile)
-            best_move = possible_moves[vf_list[index][1]]
+            else:
+                percentile = 1  # Fallback
+            index = int(len(p_features_list) * percentile)
+            best_move = possible_moves[p_features_list[index][1]]
 
-        steps = []
-        for action in best_move:
-            steps += action.get_raw_steps()
+        if self.computer_vision:
+            steps = []
+            for action in best_move:
+                steps += action.get_raw_steps()
 
-        for s in steps: 
-            # Printing the computers move
-            print("Computer move from: " + str(s.start) + " to " + str(s.end))
-            # Taking an image with the camera, request
-            success = False
-            while not success:
-                try:
-                  (x1,y1),c2 = self.computer_vision.get_move(s)
-                  x1 = 220-x1*220
-                  y1 = 220*y1
-                  result = None
-                  if c2=="OFF":
-                      result = ((x1,y1),c2)
-                  else:
-                      x2,y2 = c2
-                      x2 = 220-x2*220
-                      y2 = y2*220
-                      result = ((x1,y1),(x2,y2))
-                  
-                  self.robot_arm.move_piece(result)
-                  self.robot_arm.move_out_of_way()
-                  print(result)
-                  success = True
-                except Exception as e:
-                    input("Piece detection problem: Take image again... ")
-                    
+            for step in steps:
+                # Printing the computers move
+                print("Computer move from: " + str(step.start) + " to " + str(step.end))
+                # Taking an image with the camera, request
+                success = False
+                while not success:
+                    try:
+                        (x1, y1), c2 = self.computer_vision.get_move(step)
+                        x1 = 220 - x1 * 220
+                        y1 = 220 * y1
+                        if c2 == "OFF":
+                            result = ((x1, y1), c2)
+                        else:
+                            x2, y2 = c2
+                            x2 = 220 - x2 * 220
+                            y2 = y2 * 220
+                            result = ((x1, y1), (x2, y2))
+
+                        self.robot_arm.move_piece(result)
+                        self.robot_arm.move_out_of_way()
+                        print(result)
+                        success = True
+                    except Exception as e:
+                        input("Piece detection problem: Take image again... ")
+
         return best_move
 
 
 class HumanAgent(Agent):
+    """
+    Agent for the human player.
+    """
 
     def __init__(self, player, computer_vision):
         super().__init__(player)
@@ -104,8 +147,8 @@ class HumanAgent(Agent):
 
     def get_move(self, game, possible_moves):
         if len(possible_moves) == 0:
-          print("No moves possible")
-          return None
+            print("No moves possible")
+            return None
 
         while True:
             # input("Please type anything once you've played your move.")
@@ -123,9 +166,13 @@ class HumanAgent(Agent):
 
 
 class PubevalAgent(Agent):
-
+    """
+    Agent that uses the Pubeval model to help select its moves.
+    Source: https://bkgm.com/rgb/rgb.cgi?view+610
+    """
     def __init__(self, player):
         super().__init__(player)
+        self.name = "Pubeval"
 
     wr = np.array(
         [0.00000, -0.17160, 0.27010, 0.29906, -0.08471, 0.00000, -1.40375, -1.05121, 0.07217, -0.01351, 0.00000,
@@ -204,6 +251,13 @@ class PubevalAgent(Agent):
 
 
 class RandomAgent(Agent):
+    """
+    Agent that selects moves at random.
+    """
+
+    def __init__(self, player):
+        super().__init__(player)
+        self.name = "Randomiser"
 
     def get_move(self, game, possible_moves):
         if possible_moves:
