@@ -111,7 +111,7 @@ def transform(x, y, z):
 
     r_adj = -276 + (2.61 * r) + (-2.26e-3 * r ** 2)
 
-    theta_adj = theta * 1.07
+    theta_adj = theta * 1.14
 
     # Calculate shoulder and elbow angles based on adjusted values
     shoulder, elbow = arm_angle_to_beam_angles(*arm_coordinates_to_angle(*offset_arm_plane(r_adj, z_adj)))
