@@ -1,6 +1,7 @@
 import math
 
 from s import *
+
 # Lengths in mm
 board_width = 220
 board_depth = 220
