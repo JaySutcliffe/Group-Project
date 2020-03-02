@@ -50,6 +50,7 @@ class TDAgent(Agent):
         :param computer_vision: Vision object. Leave as None if using TDAgent for training/evaluating.
         :param difficulty: Difficulty enum.
         """
+        
         super().__init__(player)
         self.model = model
         self.name = "Computer"
@@ -170,6 +171,7 @@ class PubevalAgent(Agent):
     Agent that uses the Pubeval model to help select its moves.
     Source: https://bkgm.com/rgb/rgb.cgi?view+610
     """
+
     def __init__(self, player):
         super().__init__(player)
         self.name = "Pubeval"
