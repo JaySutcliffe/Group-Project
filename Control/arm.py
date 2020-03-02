@@ -27,11 +27,11 @@ MOTOR_CLAW = 'D'
 WAIT_CONST = 1
 
 # Claw positions (not covered in inverse kinematics because extremely simple)
-CLAW_EXTENDED_POS = 150
+CLAW_EXTENDED_POS = 200
 CLAW_WAIT_CONST = 0
 
 # Height of the top of pieces above the base
-PIECE_HEIGHT = 20
+PIECE_HEIGHT = 10
 
 # Position off the board for between moves and dropping won pieces
 OFF_POSITION = (-200, -100, 100)

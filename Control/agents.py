@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import random
 import numpy as np
+import time
 from arm import Arm
 from copy import deepcopy
 from enum import Enum
@@ -57,7 +58,8 @@ class TDAgent(Agent):
         self.difficulty = difficulty
 
         self.computer_vision = computer_vision
-        if self.computer_vision:
+        self.robot_arm = None
+        if computer_vision:
             self.robot_arm = Arm()
             self.robot_arm.move_out_of_way()
 
@@ -125,10 +127,9 @@ class TDAgent(Agent):
                             x2 = 220 - x2 * 220
                             y2 = y2 * 220
                             result = ((x1, y1), (x2, y2))
-
+                        print(result)
                         self.robot_arm.move_piece(result)
                         self.robot_arm.move_out_of_way()
-                        print(result)
                         success = True
                     except Exception as e:
                         input("Piece detection problem: Take image again... ")

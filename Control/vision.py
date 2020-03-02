@@ -60,21 +60,25 @@ debug = False
 # https://www.pyimagesearch.com/2014/08/04/opencv-python-color-detection/ using to mask the image to only deal with parts of a certain colour.
 
 
+'''
+    Function to log images taken
+    If debug is turned on windows will be opened
+    displaying the camera image when playing
+'''
+
 def debug_log(image, name="Computer Vision"):
-    # Function to log images taken
-    # If debug is turned on windows will be opened
-    # displaying the camera image when playing
     if debug:
         cv2.imshow(name, image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     cv2.imwrite("./logs/" + name + ".jpg", image)
 
-
+'''
+    Function that outputs a matrix row of xs followed by ys
+    representing the centre of each detected piece
+'''
+    
 def get_shapes(image, lower, upper, seperate=False, name=""):
-    # Function that outputs a matrix row of xs followed by ys
-    # representing the centre of each detected piece
-
     lower = np.array(lower, dtype="uint8")
     upper = np.array(upper, dtype="uint8")
 
@@ -93,20 +97,17 @@ def get_shapes(image, lower, upper, seperate=False, name=""):
     thresh = cv2.threshold(blurred, 60, 255, cv2.THRESH_OTSU)[1]
 
     if seperate:
-        # This is code found from the internet to seperate blobs into circles
         kernel = np.ones((3, 3), np.uint8)
         # Removes small unwanted features
         opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=2)
-        # sure background area
-        # sure_bg = cv2.dilate(opening,kernel,iterations=3)
-        # Finding sure foreground area
+        
         # Further away a point is from an edge the grayer it becomes
         dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
         # Binarise with threshold and end up with the white parts
         ret, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
-        # Finding unknown region
+       
         sure_fg = np.uint8(sure_fg)
-        # unknown = cv2.subtract(sure_bg,sure_fg)
+        
 
         debug_log(sure_fg, "Split " + name)
 
@@ -155,10 +156,12 @@ def get_shapes(image, lower, upper, seperate=False, name=""):
 
     return np.vstack((xs, ys))
 
-
+'''
+    Applying a perspective transformation producing a new image
+    of just the board
+'''
+    
 def perspective_transform(image):
-    # Applying a perspective transformation producing a new image
-    # of just the board
     pts = np.transpose(get_shapes(image, BORDER_COLOUR_LOWER, BORDER_COLOUR_HIGHER, False, "Border"))
     rect = np.zeros((4, 2), dtype="float32")
 
@@ -188,10 +191,11 @@ def perspective_transform(image):
 
     return warped
 
+'''
+    Takes in an image and will produce a physical board representation
+'''
 
 def report_positions(image):
-    # Takes in an image and will produce a physical board representation
-
     # Getting the dimensions so the image coordinates
     # can be mapped to a 1 x 1 grid
     height, width, channels = image.shape
@@ -243,11 +247,12 @@ def report_positions(image):
 
     return (board, bar_black, bar_white)
 
-
+'''
+    Takes in the tokens on a spike generating a pair which
+    is an abstract representation
+'''
+    
 def count_colours(spike):
-    # Takes in the tokens on a spike generating a pair which
-    # is an abstract representation
-
     # Counting the number of tokens labelled black and the number labelled white
     colours = np.array([spike[i][2] for i in range(0, len(spike))])
     black_count = sum(np.where(colours > 0.95, 1, 0))
@@ -266,30 +271,29 @@ def count_colours(spike):
             return ("E", black_count - white_count)
 
 
+# Returns an abstract representation of a physical board
 def abstract_board(board):
-    # Returns an abstract representation of a physical board
     return [count_colours(spike) for spike in board]
 
-
+# Base class for exceptions for computer vision
 class VisionError(Exception):
-    # Base class for exceptions for computer vision
     pass
 
 
+# Exception raised for error reading from the camera
 class CameraReadError(VisionError):
-    # Exception raised for error reading from the camera
     def __init__(self, message):
         self.message = message
 
 
+# Exepction raised for multiple colours appear to be on the same spike
 class BoardStateError(VisionError):
-    # Exepction raised for multiple colours appear to be on the same spike
     def __init__(self, message):
         self.message = message
 
 
+# Exception raised for multiple pieces being knocked off from one spike
 class MoveRegisteredError(VisionError):
-    # Exception raised for multiple pieces being knocked off from one spike
     def __init__(self, message):
         self.message = message
 
@@ -316,15 +320,16 @@ test_board4 = [("W", 1), ("W", 1), ("N", 0), ("N", 0), ("N", 0), ("B", 5),
                ("B", 5), ("N", 0), ("N", 0), ("N", 0), ("W", 3), ("N", 0),
                ("W", 2), ("W", 1), ("B", 2), ("W", 2), ("N", 0), ("N", 0)]
 
+'''
+    Function to that compares an old board and a new board,
+    I seperated this from the Vision class so I can test it
+    seperately from the camera.
 
+    Returned is two lists that represent the changes to the board
+    Elements have the form (colour, number moved, index)
+'''
+               
 def compare_boards(old_board, new_board):
-    # Function to that compares an old board and a new board,
-    # I seperated this from the Vision class so I can test it
-    # seperately from the camera.
-
-    # Returned is two lists that represent the changes to the board
-    # Elements have the form (colour, number moved, index)
-
     # Lists to store if the pieces have been added
     # or removed from a spike
     add = []
@@ -357,8 +362,8 @@ def compare_boards(old_board, new_board):
     return add, sub
 
 
+# Small test module used when not testing with actual images
 def test_compare():
-    # Small test module used when not testing with actual images
     add, sub = compare_boards(test_board1, test_board2)
     assert (add == [("W", 1, 1)])
     assert (sub == [("W", 1, 0)])
@@ -392,9 +397,12 @@ class Vision:
 
         self.free_spot = (SPIKE_WIDTH * 6.5, TOKEN_RADIUS)
 
+    '''    
+        Getting the decision making move and translating it into 
+        a pair of arm coordinates
+    '''
+       
     def get_move(self, dm_move):
-        # Getting the decision making move and translating it into 
-        # a pair of arm coordinates
         player, start, end = dm_move
 
         self.update_board()
@@ -471,9 +479,11 @@ class Vision:
 
         return (pos0, pos1)
 
+    '''
+        Updating the board states from the image taken from the camera
+    '''
+        
     def update_board(self):
-        # Updating the board states from the image taken from the camera
-
         # Capturing the image from a camera
         cam = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         retrieved, image = cam.read()
@@ -504,9 +514,12 @@ class Vision:
 
         # Returning old board so it can be used for comparisons
         return old_board
-
+        
+    '''
+        Function for testing if the neural networks translation is ok
+    '''
+        
     def test_play(self):
-        # Function for testing if the neural networks translation is ok
         while input("Capture image before move...  (q and enter to quit)") != "q":
             try:
                 self.update_board()
@@ -521,9 +534,12 @@ class Vision:
             except VisionError as e:
                 print("Error with move: " + e.message)
 
+    '''
+        Function that takes two images and compares them, reporting changes
+        in the board for computer vision to use
+    '''
+                
     def take_turn(self):
-        # Function that takes two images and compares them, reporting changes
-        # in the board for computer vision to use
         while True:
             try:
                 input("Capture image before move... ")
@@ -537,8 +553,8 @@ class Vision:
                 print("Error with move: " + e.message)
 
 
+# Testing function for the dm_move to arm coordinates
 def test_get_move():
-    # Testing function for the dm_move to arm coordinates
     v = Vision()
     v.update_board()
     print("WHITE OUT -> 12")
@@ -552,9 +568,8 @@ def test_get_move():
 # test_get_move()
 
 
+# Testing to see if pieces and the border is detected
 def test_image():
-    # Testing to see if pieces and the border is detected
-
     # cam = cv2.VideoCapture(0)
     # retrieved, image = cam.read()
     retrieved = True

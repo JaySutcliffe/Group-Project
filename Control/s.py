@@ -34,7 +34,7 @@ class Server:
     def send_pos(self, motor, position):
         msg = motor + str(max(position, 0)) + ";"
         self.conn.sendall(bytes(msg, 'utf-8'))
-        print(msg)
+        # print(msg)
 
     def receive(self):
         return self.conn.recv(1024)
